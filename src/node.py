@@ -2,6 +2,15 @@ import datetime
 import hashlib,sys
 import json
 from typing_extensions import Concatenate
+from MessageReciever import app
+import MessageReciever
+import threading
+import time
+import brotli
+
+
+
+
 
 class MerkleTreeNode:
     def __init__(self,value):
@@ -187,11 +196,12 @@ class MerkleTree:
 
         return self.verifyTransactionHashByIndex(index)
 
-    def toJSON(self):
-        print(self.verifyTransactionByTransactionString("b=2"))
 
-        """
-        
+    def toJSON(self):
+        return json.dumps(self, default=lambda o: o.__dict__, 
+            sort_keys=True, indent=4)
+    """
+    def toJSON(self):
         
        
         outputString = ""
@@ -213,17 +223,20 @@ class MerkleTree:
                 visited.append(currentNode.right )
                 queue.append(currentNode.right )
         return outputString
-
-        """
+    
+    
+    """
+    
 
 class Block:
-    def __init__(self, index, transactions, timestamp, previous_hash, merkleTree = None):
+    def __init__(self, index, transactions, timestamp, previous_hash, proposerId, merkleTree = None):
         self.index          = index
         self.transactions   = transactions
         self.timestamp      = timestamp
         self.hash           = ''
         self.previous_hash  = previous_hash
         self.merkleTree     = merkleTree
+        self.proposerId = proposerId
 
     def compute_hash(self):
         """
@@ -254,7 +267,11 @@ class Block:
             }
         block_string = json.dumps(outputStruct, sort_keys=True)
         return hashlib.sha256(block_string.encode()).hexdigest()
-            
+   
+    
+    def toJSON(self):
+        return json.dumps(self, default=lambda o: o.__dict__, 
+            sort_keys=True, indent=4)
         
     def get_json(self):
 
@@ -284,7 +301,7 @@ class Blockchain:
         the chain. The block has index 0, previous_hash as 0, and
         a valid hash.
         """
-        genesis_block = Block(0, ["Genenesis Block"], 0, "0")
+        genesis_block = Block(0, ["Genenesis Block"], 0, "0", 0)
         genesis_block.hash = genesis_block.compute_hash()
         self.length += 1
         self.chain.append(genesis_block)
@@ -327,12 +344,131 @@ class Blockchain:
 
     
 
-#(self, index, transactions, timestamp, previous_hash, merkleTree = None):
+"""
 block = Block(0,["a=1", "b=2", "c=3","d=4", "e=5","f=6", "g=7", "h=8", "i=9", "j=10","k=11"],str(datetime.datetime.now()) ,"0")
 
 block.compute_hash()
 
 block.get_json()
+
+
+"""
+
+
+class PBFTNode:
+    
+    def __init__(self, id, blockChain):
+        self.__privateKkey = None
+        self.publicKey = None
+
+        self.id = id #id represents the order in which nodes act as the proposer
+
+        self.peers = []
+
+        self.ProposerId = 0
+
+        self.blockChain = blockChain
+
+        self.PeerIpDict = {}
+
+
+
+    def proposeNewBlock(self):
+        self.ProposerId = self.calculateProposerId()
+        print(self.ProposerId)
+        print(self.id)
+        if  self.ProposerId == self.id:
+            block = self.createBlock()
+            self.verifyBlock(block)
+            self.broadcastBlockToPeers(block)
+        
+        else:
+            print("Listen for block proposals")
+
+    def ListenForBlockProposals(self):
+        print("TBI")
+
+
+    def createBlock(self):
+        transactions = MessageReciever.transactionQueue
+        MessageReciever.transactionQueue = []
+        #index, transactions, timestamp, previous_hash, proposerId
+        newIndex = self.blockChain.length
+        timestamp = datetime.datetime.now
+        previousHash = self.blockChain.chain[-1].hash
+        proposerId = self.id
+        newIndex = self.blockChain.length
+        block = Block(newIndex, transactions, timestamp, previousHash,proposerId)
+        return block
+
+    
+
+    @staticmethod
+    def verifyBlock(block):
+        print("include functionality for sending rejection messages to originators of faulty messages. Do this on a seperate thread.")
+        print("TBI")
+        return True
+
+    def  broadcastBlockToPeers(self, block):
+        import requests
+        import json 
+
+        for peer in self.peers:
+            print(block.toJSON())
+            r = requests.post(self.PeerIpDict[peer], json.dumps(block.__dict__))
+            print(r.status_code)
+            print(r.json())
+
+        print("Done Broadcasting new block")
+
+
+    def calculateProposerId(self):
+        print("TBI: returns 0 every time")
+        print("algo: take the previous block proposerId and add 1 % len(peers)")
+        NumberOfPeers = len(self.peers) 
+
+        if len(self.peers) < 1:
+            return 0
+
+        index = self.blockChain.chain[-1].proposerId + 1 % NumberOfPeers
+        return index
+    
+    @staticmethod
+    def compressJson(input):
+        return brotli.compress(input)
+
+    @staticmethod
+    def decompressJson(input):
+        return brotli.decompress(input)
+
+
+def threadFunc():
+    blockChain =Blockchain()
+    time.sleep(5)
+    node = PBFTNode(0, blockChain)
+    node.peers.append("me")
+    node.PeerIpDict["me"] = "http://127.0.0.1:5000/"
+    node.proposeNewBlock()
+
+def runFlask():
+    app.run(debug=False)
+
+
+thServer = threading.Thread(target=runFlask)
+
+
+th = threading.Thread(target=threadFunc)
+
+th.start()
+
+thServer.start()
+
+time.sleep(30)
+
+th.join()
+
+thServer.join
+
 
 
 
