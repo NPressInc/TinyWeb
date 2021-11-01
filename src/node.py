@@ -2,7 +2,7 @@ import datetime
 import hashlib,sys
 import json
 from typing_extensions import Concatenate
-from MessageReciever import app
+from MessageReciever import Transaction, app
 import MessageReciever
 import threading
 import time
@@ -13,11 +13,15 @@ import brotli
 
 
 class MerkleTreeNode:
-    def __init__(self,value):
-        self.left = None
-        self.right = None
+    
+    def __init__(self,value, hashValue = None, left = None, right = None):
+        self.left = left
+        self.right = right
         self.value = value
-        self.hashValue = hashlib.sha256(value.encode('utf-8')).hexdigest()
+        if hashValue == None:
+            self.hashValue = hashlib.sha256(value.encode('utf-8')).hexdigest()
+        else:
+            self.hashValue = hashValue
     
     def buildTree(self, transactions):
         nodes = []
@@ -51,13 +55,37 @@ class MerkleTreeNode:
         f = open("merkle.tree", "w")
         root = self.buildTree(leaves,f)
         f.close()
+    
+    @staticmethod
+    def DeserializeJSON(SerializedTreeNode):
+        merkleTreeNodeDict = json.loads(SerializedTreeNode)
+        return MerkleTreeNode(**merkleTreeNodeDict)
+
+
+    def serializeJSON(self):
+        return json.dumps(self, default=lambda o: o.__dict__, 
+            sort_keys=True, indent=4)
+
 
     
 
 
 class MerkleTree:
 
-    def findClosestSquare(self, size):
+    
+
+    def __init__(self,rootNode: MerkleTreeNode,  size = None, rootHash = None, depth=None):
+        self.rootNode = rootNode
+        self.rootHash = rootNode.hashValue
+        self.size = size
+        if depth == None:
+            self.depth = self.findClosestSquare(self.size)
+        else:
+            self.depth = depth
+
+
+    @staticmethod
+    def findClosestSquare(size):
         product = 1
         output = 0
         while product < size:
@@ -65,20 +93,9 @@ class MerkleTree:
             output += 1
         
         return output
-
-    def __init__(self,rootNode: MerkleTreeNode, transactions, depth=None):
-        self.rootNode = rootNode
-        self.rootHash = rootNode.hashValue
-        self.size = len(transactions)
-        self.depth = self.findClosestSquare(self.size)
-        self.IndexMap = self.getDictFromTransactions(transactions)
         
 
-    def getDictFromTransactions(self,transactions):
-        output = {}
-        for i in range(len(transactions)):
-            output[transactions[i]] = i
-        return output
+    
 
     def getTransactionNodeFromIndex(self, index):
 
@@ -187,7 +204,7 @@ class MerkleTree:
         
 
         return {currNode.value: True}
-
+    """
     def verifyTransactionByTransactionString(self, transactionString):
         if not(transactionString in self.IndexMap):
             return {transactionString: False}
@@ -195,48 +212,83 @@ class MerkleTree:
         index = self.IndexMap[transactionString]
 
         return self.verifyTransactionHashByIndex(index)
+    
+    """
+    
+    
+    @staticmethod
+    def deserializeJSON(merkleTreeString):
+        merkleTreeDict = json.loads(merkleTreeString)
+
+        merkleNodeDict = json.loads(merkleTreeDict["rootNode"])
+
+        merkleTreeDict["rootNode"] = MerkleTreeNode(**merkleNodeDict)
+
+        return MerkleTree(**merkleTreeDict)
 
 
-    def toJSON(self):
-        return json.dumps(self, default=lambda o: o.__dict__, 
+    def serializeJSON(self):
+        output = {
+            "rootNode" : self.rootNode.serializeJSON(),
+            "rootHash": self.rootHash,
+            "size": self.size,
+            "depth": self.depth
+        }
+        return json.dumps(output, default=lambda o: o.__dict__, 
             sort_keys=True, indent=4)
     """
-    def toJSON(self):
+    def toCustomStringRepresentation(self):
         
-       
-        outputString = ""
-        visited = []
-        queue = []
+            outputString = ""
+            visited = []
+            queue = []
+            
+            visited.append(self.rootNode)
+            queue.append(self.rootNode)
+
+            while queue:
+                currentNode = queue.pop(0) 
+                outputString += currentNode.value + " : " + currentNode.hashValue + "||||"
+
+                if currentNode.left not in visited and currentNode.left != None:
+                    visited.append(currentNode.left)
+                    queue.append(currentNode.left)
+
+                if currentNode.right not in visited and currentNode.right != None:
+                    visited.append(currentNode.right )
+                    queue.append(currentNode.right )
+            return outputString
         
-        visited.append(self.rootNode)
-        queue.append(self.rootNode)
-
-        while queue:
-            currentNode = queue.pop(0) 
-            outputString += currentNode.value + " : " + currentNode.hashValue + "||||"
-
-            if currentNode.left not in visited and currentNode.left != None:
-                visited.append(currentNode.left)
-                queue.append(currentNode.left)
-
-            if currentNode.right not in visited and currentNode.right != None:
-                visited.append(currentNode.right )
-                queue.append(currentNode.right )
-        return outputString
-    
     
     """
+    
+   
+   
+   
+    
+   
     
 
 class Block:
-    def __init__(self, index, transactions, timestamp, previous_hash, proposerId, merkleTree = None):
+    def __init__(self, index, transactions, timestamp, previous_hash, proposerId, hash=None, merkleTree = None, TransactionIndexMap = None):
         self.index          = index
         self.transactions   = transactions
         self.timestamp      = timestamp
-        self.hash           = ''
+        self.hash           = hash
         self.previous_hash  = previous_hash
-        self.merkleTree     = merkleTree
         self.proposerId = proposerId
+        self.merkleTree     = merkleTree
+        if TransactionIndexMap == None:
+            self.TransactionIndexMap = self.getDictFromTransactions(transactions)
+        else:
+            self.TransactionIndexMap = TransactionIndexMap
+
+    @staticmethod
+    def getDictFromTransactions(transactions):
+        output = {}
+        for i in range(len(transactions)):
+            output[transactions[i]] = i
+        return output
 
     def compute_hash(self):
         """
@@ -249,7 +301,7 @@ class Block:
             rootNode = MerkleTreeNode("")
             rootNode = rootNode.buildTree(self.transactions)
             
-            self.merkleTree = MerkleTree(rootNode, self.transactions)
+            self.merkleTree = MerkleTree(rootNode, len(self.transactions))
 
             outputStruct = {
                 "index": self.index,
@@ -267,26 +319,39 @@ class Block:
             }
         block_string = json.dumps(outputStruct, sort_keys=True)
         return hashlib.sha256(block_string.encode()).hexdigest()
-   
     
-    def toJSON(self):
-        return json.dumps(self, default=lambda o: o.__dict__, 
-            sort_keys=True, indent=4)
+    
+    @staticmethod
+    def deserializeJSON(jsonString):
+        blockDict = json.loads(jsonString)
+        blockDict["merkleTree"] = MerkleTree.deserializeJSON(blockDict["merkleTree"])
+        return Block(**blockDict)
         
-    def get_json(self):
-
-        
-        
+    
+    def serializeJSON(self):
         outputStruct = {
                 "index": self.index,
-                "timestamp": self.timestamp,
-                "previousHash": self.previous_hash,
                 "transactions": self.transactions,
-                "merkleRoot": self.merkleTree.rootHash,
-                "MerkleTree": self.merkleTree.toJSON()
+                "timestamp": self.timestamp,
+                "hash": self.hash,
+                "previous_hash": self.previous_hash,
+                "proposerId": self.proposerId,
+                "merkleTree": self.merkleTree.serializeJSON(),
+                "TransactionIndexMap": self.TransactionIndexMap
         }
 
+        """
+        self.index          = index
+        self.transactions   = transactions
+        self.timestamp      = timestamp
+        self.hash           = ''
+        self.previous_hash  = previous_hash
+        self.proposerId = proposerId
+        self.merkleTree     = merkleTree
+        """
+
         return json.dumps(outputStruct , indent=4, sort_keys=True)
+
 
 class Blockchain:
     def __init__(self):
@@ -343,16 +408,30 @@ class Blockchain:
         self.chain.append(block)
 
     
+transactions = ["a=1", "b=2", "c=3","d=4", "e=5","f=6", "g=7", "h=8", "i=9", "j=10","k=11"]
 
-"""
-block = Block(0,["a=1", "b=2", "c=3","d=4", "e=5","f=6", "g=7", "h=8", "i=9", "j=10","k=11"],str(datetime.datetime.now()) ,"0")
+block = Block(0,transactions,str(datetime.datetime.now()) ,"0", 0)
 
 block.compute_hash()
 
-block.get_json()
+blockString = block.serializeJSON()
+
+print(blockString)
+
+newBlock = block.deserializeJSON(blockString)
+
+if newBlock.hash == block.hash:
+    print("Success!")
+else:
+    print("failure :(")
 
 
-"""
+
+
+
+#block.get_json()
+
+
 
 
 class PBFTNode:
@@ -453,6 +532,7 @@ def threadFunc():
 def runFlask():
     app.run(debug=False)
 
+"""
 
 thServer = threading.Thread(target=runFlask)
 
@@ -468,6 +548,9 @@ time.sleep(30)
 th.join()
 
 thServer.join
+
+"""
+
 
 
 
