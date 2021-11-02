@@ -15,7 +15,7 @@ def hello_world():
 @app.route("/ProposeBlock", methods=['POST'])
 def NewBlock():
     jsn = request.get_json()
-    print(jsn)
+    print(request)
     return "<p>Thank you for proposing your new block!</p>"
 
 @app.route("/BlockVerified")

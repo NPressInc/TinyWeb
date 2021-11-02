@@ -14,8 +14,6 @@ def normalSigning():
     )
 
 
-
-
 def largeDataSigning():
     
     private_key = ec.generate_private_key(
