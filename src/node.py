@@ -2,13 +2,13 @@ import datetime
 import hashlib,sys
 import json
 from typing_extensions import Concatenate
-from MessageReciever import Transaction, app
-import MessageReciever
+from MessageReciever import app
 import threading
 import time
 import brotli
 from structures.BlockChain.BlockChain import BlockChain
 from structures.Block.Block import Block
+import MessageReciever
 
 print(BlockChain)
 print(Block)
@@ -51,10 +51,11 @@ class PBFTNode:
 
     def createBlock(self):
         transactions = MessageReciever.transactionQueue
+        #print(transactions)
         MessageReciever.transactionQueue = []
         newIndex = self.blockChain.length
         timestamp = time.time()
-        print(timestamp)
+        #print(timestamp)
         previousHash = self.blockChain.chain[-1].hash
         proposerId = self.id
         newIndex = self.blockChain.length
@@ -74,10 +75,13 @@ class PBFTNode:
         import requests
 
         for peer in self.peers:
-            print(block.serializeJSON())
-            r = requests.post(self.PeerIpDict[peer] + "ProposeBlock", block.serializeJSON())
+            #print(block.serializeJSON())
+            url = self.PeerIpDict[peer] + "ProposeBlock"
+            data = block.serializeJSON()
+            headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+            r = requests.post(url, data=data, headers=headers)
             print(r.status_code)
-            print(r)
+            #print(r)
 
         print("Done Broadcasting new block")
 

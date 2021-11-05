@@ -2,7 +2,6 @@ import datetime
 import hashlib,sys
 import json
 from typing_extensions import Concatenate
-from MessageReciever import Transaction, app
 import MessageReciever
 import threading
 import time
@@ -51,7 +50,6 @@ class Block:
                 "previousHash": self.previous_hash,
                 "merkleRoot": self.merkleTree.rootHash
             }
-            print("Here1")
         else:
             outputStruct = {
                 "index": self.index,
@@ -59,8 +57,8 @@ class Block:
                 "previousHash": self.previous_hash,
                 "merkleRoot": "Empty"
             }
-            print(outputStruct)
-            print("Here2")
+            #print(outputStruct)
+            #print("Here2")
         block_string = self.serializeJSONForHashing()
 
         self.hash = hashlib.sha256(block_string.encode()).hexdigest()
@@ -71,6 +69,7 @@ class Block:
     def deserializeJSON(jsonString):
         blockDict = json.loads(jsonString)
         blockDict["merkleTree"] = MerkleTree.deserializeJSON(blockDict["merkleTree"])
+        blockDict["TransactionIndexMap"] = json.loads(blockDict["TransactionIndexMap"])
         return Block(**blockDict)
         
     def serializeJSONForHashing(self):

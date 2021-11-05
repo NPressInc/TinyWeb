@@ -2,11 +2,11 @@ import datetime
 import hashlib,sys
 import json
 from typing_extensions import Concatenate
-from MessageReciever import Transaction, app
 import MessageReciever
 import threading
 import time
 import brotli
+import globalVariables
 
 
 
@@ -23,6 +23,7 @@ class MerkleTreeNode:
     
     def buildTree(self, transactions):
         nodes = []
+        print(transactions)
         for value in transactions:
             nodes.append(MerkleTreeNode(value))
 
