@@ -1,13 +1,22 @@
 from time import perf_counter
 from flask import Flask, request
-from Utils.Serialization.Serialization import Serialization
-from structures.Block.Block import Block
+from os import path
+
+from ..Serialization.Serialization import Serialization
+
+from ..structures.BlockChain.Block import Block
+
 import json
 
-transactionQueue = []
-PendingBlock = None
-validationVotes = []
-commitVotes = []
+class MessageQueues:
+    def __init__(self):
+        self.transactionQueue = []
+        self.PendingBlock = None
+        self.validationVotes = []
+        self.commitVotes = []
+
+
+messageQueues = MessageQueues()
 
 app = Flask(__name__)
 
@@ -25,8 +34,7 @@ def NewBlock():
     print({"request": request})
     print({"should be a json string": jsnString})
     block = Block.deserializeJSON(jsnString)
-
-    PendingBlock = block
+    messageQueues.PendingBlock = block
 
 
 
@@ -56,7 +64,7 @@ def Transaction():
         }
         chainMessageString = Serialization.serializeObjToJson(chainMessage)
         print({"chainMessageString": chainMessageString})
-        transactionQueue.append(chainMessageString)
+        messageQueues.transactionQueue.append(chainMessageString)
 
         return "<p>Message Queued!</p>"
 
