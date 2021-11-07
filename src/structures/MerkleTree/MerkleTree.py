@@ -4,11 +4,14 @@ import datetime
 import hashlib,sys
 import json
 from typing_extensions import Concatenate
-import MessageReciever
 import threading
 import time
 import brotli
-from ..MerkleTreeNode.MerkleTreeNode import MerkleTreeNode
+
+import importlib.util
+spec = importlib.util.spec_from_file_location("MerkleTreeNode", "structures/MerkleTree/MerkleTreeNode.py")
+MerkleTreeNode = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(MerkleTreeNode)
 
 
 

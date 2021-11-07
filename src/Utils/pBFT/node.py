@@ -2,16 +2,13 @@ import datetime
 import hashlib,sys
 import json
 from typing_extensions import Concatenate
-from MessageReciever import app
 import threading
 import time
 import brotli
 from structures.BlockChain.BlockChain import BlockChain
-from structures.Block.Block import Block
-import MessageReciever
+from structures.BlockChain.Block import Block
+from Utils.Verification.BlockVerification import BlockVerification
 
-print(BlockChain)
-print(Block)
 
 
 
@@ -67,6 +64,7 @@ class PBFTNode:
 
     @staticmethod
     def verifyBlock(block):
+
         print("include functionality for sending rejection messages to originators of faulty messages. Do this on a seperate thread.")
         print("TBI")
         return True
@@ -106,33 +104,6 @@ class PBFTNode:
         return brotli.decompress(input)
 
 
-def threadFunc():
-    blockChain =BlockChain()
-    time.sleep(5)
-    node = PBFTNode(0, blockChain)
-    node.peers.append("me")
-    node.PeerIpDict["me"] = "http://127.0.0.1:5000/"
-    node.proposeNewBlock()
-
-def runFlask():
-    app.run(debug=False)
-
-
-
-thServer = threading.Thread(target=runFlask)
-
-
-th = threading.Thread(target=threadFunc)
-
-th.start()
-
-thServer.start()
-
-time.sleep(30)
-
-th.join()
-
-thServer.join
 
 
 

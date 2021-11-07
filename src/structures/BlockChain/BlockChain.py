@@ -1,13 +1,11 @@
-import datetime
-import hashlib,sys
-import json
+
 from typing_extensions import Concatenate
-from MessageReciever import Transaction, app
-import MessageReciever
-import threading
-import time
-import brotli
-from ..Block.Block import Block
+
+import importlib.util
+
+spec = importlib.util.spec_from_file_location("Block", "structures/BlockChain/Block.py")
+Block = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(Block)
 
 
 class BlockChain:

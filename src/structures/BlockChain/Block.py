@@ -2,14 +2,22 @@ import datetime
 import hashlib,sys
 import json
 from typing_extensions import Concatenate
-import MessageReciever
+import importlib.util
+
 import threading
 import time
 import brotli
 
-from ..MerkleTreeNode.MerkleTreeNode import MerkleTreeNode
-from ..MerkleTree.MerkleTree import MerkleTree
 
+spec = importlib.util.spec_from_file_location("MerkleTreeNode", "structures/MerkleTree/MerkleTreeNode.py")
+MerkleTreeNode = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(MerkleTreeNode)
+
+
+spec = importlib.util.spec_from_file_location("MerkleTree", "structures/MerkleTree/MerkleTree.py")
+MerkleTree = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(MerkleTree)
+ 
 class Block:
     def __init__(self, index, transactions, timestamp, previous_hash, proposerId, hash=None, merkleTree = None, TransactionIndexMap = None):
         self.index          = index

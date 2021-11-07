@@ -1,7 +1,15 @@
 from time import perf_counter
 from flask import Flask, request
-from Utils.Serialization.Serialization import Serialization
-from structures.Block.Block import Block
+from os import path
+import importlib.util
+spec1 = importlib.util.spec_from_file_location("Serialization", "Utils/Serialization/Serialization.py")
+Serialization = importlib.util.module_from_spec(spec1)
+spec1.loader.exec_module(Serialization)
+
+spec2 = importlib.util.spec_from_file_location("Block", "structures/BlockChain/Block.py")
+Block = importlib.util.module_from_spec(spec2)
+spec2.loader.exec_module(Block)
+
 import json
 
 transactionQueue = []
