@@ -1,3 +1,3 @@
-from Utils.Tests.threading import ThreadingTests
+from Packages.Tests.threading import ThreadingTests
 
-ThreadingTests.threadFunc()
+ThreadingTests.threadingTest()
