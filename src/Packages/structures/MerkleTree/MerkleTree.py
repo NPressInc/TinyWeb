@@ -176,7 +176,7 @@ class MerkleTree:
             "depth": self.depth
         }
         return json.dumps(output, default=lambda o: o.__dict__, 
-            sort_keys=True, indent=4)
+            sort_keys=True)
     """
     def toCustomStringRepresentation(self):
         

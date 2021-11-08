@@ -2,9 +2,6 @@
 import hashlib,sys
 import json
 
-
-
-
 class MerkleTreeNode:
     
     def __init__(self,value, hashValue = None, left = None, right = None):
@@ -58,7 +55,7 @@ class MerkleTreeNode:
 
     def serializeJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__, 
-            sort_keys=True, indent=4)
+            sort_keys=True)
 
 
     

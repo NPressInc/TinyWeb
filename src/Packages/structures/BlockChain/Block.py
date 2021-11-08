@@ -74,11 +74,15 @@ class Block:
         blockDict = json.loads(jsonString)
         if blockDict["merkleTree"] != "Empty":
             blockDict["merkleTree"] = MerkleTree.deserializeJSON(blockDict["merkleTree"])
-        blockDict["TransactionIndexMap"] = json.loads(blockDict["TransactionIndexMap"])
+
+     
+        if type(blockDict["TransactionIndexMap"]) == type.__str__:
+            blockDict["TransactionIndexMap"] = json.loads(blockDict["TransactionIndexMap"])
+        
         return Block(**blockDict)
         
     def serializeJSONForHashing(self):
-        if self.merkleTree != None:
+        if self.merkleTree != None and self.merkleTree != "Empty":
 
             outputStruct = {
                     "index": self.index,
@@ -103,10 +107,10 @@ class Block:
 
      
 
-        return json.dumps(outputStruct , indent=4, sort_keys=True)
+        return json.dumps(outputStruct , indent=0, sort_keys=True)
     
     def serializeJSON(self):
-        if self.merkleTree != None:
+        if self.merkleTree != None and self.merkleTree != "Empty":
 
             outputStruct = {
                     "index": self.index,
@@ -130,4 +134,4 @@ class Block:
                     "TransactionIndexMap": self.TransactionIndexMap
             }
 
-        return json.dumps(outputStruct , indent=4, sort_keys=True)
+        return json.dumps(outputStruct , sort_keys=True)

@@ -14,7 +14,18 @@ class MessageQueues:
         self.PendingBlock = None
         self.validationVotes = []
         self.commitVotes = []
+    
+    def getPendingBlock(self):
+        return self.PendingBlock
 
+    def setPendingBlock(self, PendingBlock):
+        self.PendingBlock = PendingBlock
+
+    def getPtransactionQueue(self):
+        return self.transactionQueue
+
+    def setTransactionQueue(self, transactionQueue):
+        self.transactionQueue = transactionQueue
 
 messageQueues = MessageQueues()
 
