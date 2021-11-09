@@ -69,10 +69,6 @@ class Block:
         blockDict = json.loads(jsonString)
         if blockDict["merkleTree"] != "Empty":
             blockDict["merkleTree"] = MerkleTree.deserializeJSON(blockDict["merkleTree"])
-
-     
-        if type(blockDict["TransactionIndexMap"]) == type.__str__:
-            blockDict["TransactionIndexMap"] = json.loads(blockDict["TransactionIndexMap"])
         
         return Block(**blockDict)
         
@@ -85,8 +81,7 @@ class Block:
                     "timestamp": self.timestamp,
                     "previous_hash": self.previous_hash,
                     "proposerId": self.proposerId,
-                    "merkleTree": self.merkleTree.serializeJSON(),
-                    "TransactionIndexMap": self.TransactionIndexMap
+                    "merkleTree": self.merkleTree.serializeJSON()
             }
         else:
             outputStruct = {
@@ -95,8 +90,7 @@ class Block:
                     "timestamp": self.timestamp,
                     "previous_hash": self.previous_hash,
                     "proposerId": self.proposerId,
-                    "merkleTree": "Empty",
-                    "TransactionIndexMap": self.TransactionIndexMap
+                    "merkleTree": "Empty"
             }
 
 
@@ -114,8 +108,7 @@ class Block:
                     "hash": self.hash,
                     "previous_hash": self.previous_hash,
                     "proposerId": self.proposerId,
-                    "merkleTree": self.merkleTree.serializeJSON(),
-                    "TransactionIndexMap": self.TransactionIndexMap
+                    "merkleTree": self.merkleTree.serializeJSON()
             }
         else:
             outputStruct = {
@@ -125,8 +118,7 @@ class Block:
                     "hash": self.hash,
                     "previous_hash": self.previous_hash,
                     "proposerId": self.proposerId,
-                    "merkleTree": "Empty",
-                    "TransactionIndexMap": self.TransactionIndexMap
+                    "merkleTree": "Empty"
             }
 
         return json.dumps(outputStruct , sort_keys=True)

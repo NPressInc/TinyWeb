@@ -1,5 +1,6 @@
 import datetime
-import hashlib,sys
+import hashlib
+import sys
 import json
 from typing_extensions import Concatenate
 import threading
@@ -18,55 +19,48 @@ from ..structures.RolesAndPermissions.RoleDefinitions import MegaAdminRole, Role
 from ..structures.RolesAndPermissions.PermissionDefinitions import PermissionDefinitions
 
 
-
 class PBFTNode:
 
-    @staticmethod 
+    @staticmethod
     def configureBlockChainForFirstUse():
         client1 = TinyWebClient.initializeClient("1")
         client2 = TinyWebClient.initializeClient("2")
         client3 = TinyWebClient.initializeClient("3")
 
         baseGroupPublicKeys = []
-        client1PublicKeyString = Signing.PublicKeyMethods.serializePublicKey(client1.publicKey)
+        client1PublicKeyString = Signing.PublicKeyMethods.serializePublicKey(
+            client1.publicKey)
         baseGroupPublicKeys.append(client1PublicKeyString)
 
-        client2PublicKeyString = Signing.PublicKeyMethods.serializePublicKey(client2.publicKey)
+        client2PublicKeyString = Signing.PublicKeyMethods.serializePublicKey(
+            client2.publicKey)
         baseGroupPublicKeys.append(client2PublicKeyString)
 
-        client3PublicKeyString = Signing.PublicKeyMethods.serializePublicKey(client3.publicKey)
+        client3PublicKeyString = Signing.PublicKeyMethods.serializePublicKey(
+            client3.publicKey)
         baseGroupPublicKeys.append(client3PublicKeyString)
-
-
-        print(RoleDefinitions)
-
-        print(PermissionDefinitions)
-
 
         RoleDict = {}
 
-        RoleDict[client1PublicKeyString] = ["SuperMemberRole"]
+        RoleDict[client1PublicKeyString] = "SuperMemberRole"
 
-        RoleDict[client2PublicKeyString] = ["MemberRole"]
+        RoleDict[client2PublicKeyString] = "MemberRole"
 
-        RoleDict[client3PublicKeyString] = ["SubMemberRole"]
-        
+        RoleDict[client3PublicKeyString] = "SubMemberRole"
 
-        blockChain = BlockChain(initialGroupMemebers= baseGroupPublicKeys, RoleDefinitions=RoleDefinitions, PermissionDefinitions=PermissionDefinitions,RoleDict=RoleDict )
+        blockChain = BlockChain(initialGroupMemebers=baseGroupPublicKeys, RoleDefinitions=RoleDefinitions,
+                                PermissionDefinitions=PermissionDefinitions, RoleDict=RoleDict)
 
-        print(blockChain.serializeJSON())
+        # print(blockChain.serializeJSON())
 
         return blockChain
-
-        
-
 
     @staticmethod
     def runNode():
         blockChain = PBFTNode.configureBlockChainForFirstUse()
 
         counter = 0
-        
+
         while counter < 4:
             time.sleep(3)
             counter += 1
@@ -77,21 +71,19 @@ class PBFTNode:
             node.blockChain.add_block(messageQueues.PendingBlock)
 
         #print("Pre Save")
-        #print(blockChain.serializeJSON())
+        # print(blockChain.serializeJSON())
         BlockChainReadWrite.saveBlockChainToFile(node.blockChain)
-
 
         time.sleep(2)
 
         #print("POST Read")
         blockChainRecovered = BlockChainReadWrite.readBlockChainFromFile()
 
-    
     def __init__(self, id, blockChain):
         self.__privateKkey = None
         self.publicKey = None
 
-        self.id = id #id represents the order in which nodes act as the proposer
+        self.id = id  # id represents the order in which nodes act as the proposer
 
         self.peers = []
 
@@ -101,39 +93,35 @@ class PBFTNode:
 
         self.PeerIpDict = {}
 
-
-
     def proposeNewBlock(self):
         self.ProposerId = self.calculateProposerId()
         print(self.ProposerId)
         print(self.id)
-        if  self.ProposerId == self.id:
+        if self.ProposerId == self.id:
             block = self.createBlock()
             self.verifyBlock(block)
             self.broadcastBlockToPeers(block)
-        
+
         else:
             print("Listen for block proposals")
 
     def ListenForBlockProposals(self):
         print("TBI")
 
-
     def createBlock(self):
         transactions = messageQueues.transactionQueue
-        #print(transactions)
+        # print(transactions)
         messageQueues.transactionQueue = []
         newIndex = self.blockChain.length
         timestamp = time.time()
-        #print(timestamp)
+        # print(timestamp)
         previousHash = self.blockChain.chain[-1].hash
         proposerId = self.id
         newIndex = self.blockChain.length
-        block = Block(newIndex, transactions, timestamp, previousHash,proposerId)
+        block = Block(newIndex, transactions, timestamp,
+                      previousHash, proposerId)
         block.compute_hash()
         return block
-
-    
 
     @staticmethod
     def verifyBlock(block):
@@ -142,32 +130,32 @@ class PBFTNode:
         print("TBI")
         return True
 
-    def  broadcastBlockToPeers(self, block):
+    def broadcastBlockToPeers(self, block):
         import requests
 
         for peer in self.peers:
-            #print(block.serializeJSON())
+            # print(block.serializeJSON())
             url = self.PeerIpDict[peer] + "ProposeBlock"
             data = block.serializeJSON()
-            headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+            headers = {'Content-type': 'application/json',
+                       'Accept': 'text/plain'}
             r = requests.post(url, data=data, headers=headers)
             print(r.status_code)
-            #print(r)
+            # print(r)
 
         print("Done Broadcasting new block")
-
 
     def calculateProposerId(self):
         print("TBI: returns 0 every time")
         print("algo: take the previous block proposerId and add 1 % len(peers)")
-        NumberOfPeers = len(self.peers) 
+        NumberOfPeers = len(self.peers)
 
         if len(self.peers) < 1:
             return 0
 
         index = self.blockChain.chain[-1].proposerId + 1 % NumberOfPeers
         return index
-    
+
     @staticmethod
     def compressJson(input):
         return brotli.compress(input)
@@ -175,12 +163,3 @@ class PBFTNode:
     @staticmethod
     def decompressJson(input):
         return brotli.decompress(input)
-
-
-
-
-
-
-
-
-

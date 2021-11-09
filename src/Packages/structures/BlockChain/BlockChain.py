@@ -79,6 +79,7 @@ class BlockChain:
             transactions.append(permissionString)
 
 
+        roleHashDict = {}
 
         for RoleDef in RoleDefinitions:
             newRole = {
@@ -89,9 +90,12 @@ class BlockChain:
                 "permissionHashes": RoleDef["permissionHashes"]
             }
             for i in range(len(RoleDef["permissionHashes"])):
+                
                 newRole["permissionHashes"][i] = permissionNameHashDict[newRole["permissionHashes"][i]]
 
             hash = Serialization.hashRoleDef(newRole)
+
+            roleHashDict[newRole["name"]] = hash
 
             newRole["hash"] = hash
 
@@ -103,7 +107,7 @@ class BlockChain:
             roleAssignment = {
                 "messageType": "RoleAssignment",
                 "user": key,
-                "roleHashes": RoleDict[key],
+                "roleHash": roleHashDict[RoleDict[key]],
                 "groupHash": groupHash
             }
             roleAssignmentString = Serialization.serializeRoleAssignment(roleAssignment)
@@ -111,8 +115,9 @@ class BlockChain:
 
 
 
-        for tr in transactions:
-            print(tr)
+        #for tr in transactions:
+           #print("----------")
+            #print(tr)
 
         genesis_block = Block(index=0,transactions= transactions, timestamp = time.time(), previous_hash="0",proposerId=-1)
         genesis_block.hash = genesis_block.compute_hash()

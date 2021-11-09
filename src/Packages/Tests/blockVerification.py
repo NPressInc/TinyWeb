@@ -1,4 +1,4 @@
 class blockVerification:
     @staticmethod
-    def verifyGenesisBlock():
-        print("TBI")
+    def verifyGenesisBlock(BlockChain):
+        print("TMI")
