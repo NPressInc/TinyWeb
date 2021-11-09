@@ -1,12 +1,89 @@
 from cryptography.hazmat.primitives.asymmetric import utils
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.backends import default_backend
 
 
 class Signing:
 
+
+    class PrivateKeyMethods:
+
+        @staticmethod
+        def generatePrivateKey():
+            private_key = ec.generate_private_key(ec.SECP384R1())
+            return private_key
+
+        @staticmethod
+        def savePrivateKey(privateKey: ec.EllipticCurvePrivateKey, clientId):
+            PKBytes = privateKey.private_bytes(
+                encoding = serialization.Encoding.PEM, 
+                format=serialization.PrivateFormat.PKCS8, 
+                encryption_algorithm = serialization.NoEncryption()
+                )
+            with open("State/private_key" + clientId + ".pem", 'wb') as f:
+                f.write(PKBytes)
+
+        @staticmethod
+        def loadPrivateKey(clientId):
+            with open("State/private_key" + clientId + ".pem", "rb") as key_file:
+                private_key = serialization.load_pem_private_key(
+                    key_file.read(),
+                    password=None,
+                    backend=default_backend()
+                )
+                return private_key
+
+        @staticmethod
+        def serializePrivateKey(privateKey: ec.EllipticCurvePrivateKey):
+            PKBytes = privateKey.private_bytes(
+                encoding = serialization.Encoding.PEM, 
+                format=serialization.PrivateFormat.PKCS8, 
+                encryption_algorithm = serialization.NoEncryption()
+                )
+            return PKBytes.decode("utf-8")
+
+        @staticmethod
+        def deserializePrivateKeyPemFromString(PEMString):
+            private_key = serialization.load_pem_private_key(
+                    PEMString,
+                    password=None,
+                    backend=default_backend()
+                )
+            return private_key
+
+        @staticmethod
+        def generatePublicKeyFromPrivate(privateKey: ec.EllipticCurvePrivateKey):
+            return privateKey.public_key()
+
+    class PublicKeyMethods:
+        
+
+        
+        @staticmethod
+        def serializePublicKey(public_key: ec.EllipticCurvePublicKey):
+            public_pem = public_key.public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo
+            )
+            return public_pem.decode("utf-8")
+
+        @staticmethod
+        def deserializePublicKey(PEMString):
+            public_key = serialization.load_pem_public_key(
+                PEMString,
+                backend=default_backend()
+            )
+            return public_key
+
+
+    
+
+    
     @staticmethod
     def normalSigning():
+        
         private_key = ec.generate_private_key(
             ec.SECP384R1()
         )

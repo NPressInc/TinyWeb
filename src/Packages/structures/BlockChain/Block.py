@@ -1,12 +1,7 @@
-import datetime
-import hashlib,sys
+
+import hashlib
 import json
 from typing_extensions import Concatenate
-import importlib.util
-
-import threading
-import time
-import brotli
 
 
 from ..MerkleTree.MerkleTreeNode import MerkleTreeNode
@@ -107,7 +102,7 @@ class Block:
 
      
 
-        return json.dumps(outputStruct , indent=0, sort_keys=True)
+        return json.dumps(outputStruct , sort_keys=True)
     
     def serializeJSON(self):
         if self.merkleTree != None and self.merkleTree != "Empty":
