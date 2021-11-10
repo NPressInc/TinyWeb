@@ -1,9 +1,14 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request
+import json
+
+from Packages.structures.BlockChain.BlockParser import BlockParser
+from Packages.structures.BlockChain.BlockchainParser import BlockchainParser
 from ..Serialization.Serialization import Serialization
 
 from ..pBFT.node import PBFTNode
 
 BCQapp = Flask(__name__)
+
 
 @BCQapp.route("/")
 def hello_world():
@@ -27,13 +32,49 @@ def GetAllGroups():
 
     print(PBFTNode.node)
 
+    if PBFTNode.node == None:
+        return json.dumps({"message": "Node not initialized"})
+
+    groups = BlockchainParser.getGroupsByPublicKey(PBFTNode.node.blockChain,publicKey)
+
+    return json.dumps(groups)
+
+
+@BCQapp.route("/GetSentMessages", methods=['POST'])
+def GetSentMessages():
+    jsn = request.get_json()
+
+    print(jsn)
+
+    publicKey = jsn["publicKey"]
+
+    print(publicKey)
+
+    print(PBFTNode.node)
 
     if PBFTNode.node == None:
-        return jsonify({"message": "Node not initialized"})
-    
-    groups = PBFTNode.node.blockChain.getGroupsByPublicKey(publicKey)
+        return json.dumps({"message": "Node not initialized"})
 
-    return jsonify({"groups": groups})
+    messages = BlockchainParser.getSentMessagesFromPublicKey(PBFTNode.node.blockChain,publicKey)
 
+    return json.dumps(messages)
 
-    
+@BCQapp.route("/GetReceivedMessages", methods=['POST'])
+def GetReceivedMessages():
+    jsn = request.get_json()
+
+    print(jsn)
+
+    publicKey = jsn["publicKey"]
+
+    print(publicKey)
+
+    print(PBFTNode.node)
+
+    if PBFTNode.node == None:
+        return json.dumps({"message": "Node not initialized"})
+
+    messages = BlockchainParser.getRecievedMessagesFromPublicKey(PBFTNode.node.blockChain,publicKey)
+
+    return json.dumps(messages)
+

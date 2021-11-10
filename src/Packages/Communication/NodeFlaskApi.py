@@ -70,20 +70,15 @@ def CheckBlockChain():
 
 @app.route("/Transaction", methods=['POST'])
 def Transaction():
-    jsn = request.get_json()
-    try:
-        chainMessage = {
-            "Address1": jsn["from"],
-            "Type": "SMS",
-            "Address2": jsn["to"],
-            "Content": jsn["content"]
-        }
-        MessageQueues.messageQueues.transactionQueue.append(chainMessage)
-
-        return "<p>Message Queued!</p>"
-
-    except:
-        return "<p>Something Went Wrong</p>"
+    chainMessage = request.get_json()
+    MessageQueues.messageQueues.transactionQueue.append(chainMessage)
+    return json.dumps({"status":"ok"})
+    """
+     except Exception as e: 
+        print(e)
+        return json.dumps({"status":str(e)})
+    """
+   
 
 
 @app.route("/GetAllGroups", methods=['POST'])

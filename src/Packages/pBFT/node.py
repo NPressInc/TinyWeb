@@ -37,8 +37,8 @@ class PBFTNode:
         node.peers.append("me")
         node.PeerIpDict["me"] = "http://127.0.0.1:5000/"
 
-        while counter < 100:
-            time.sleep(3)
+        while counter < 1000:
+            time.sleep(5)
             counter += 1
             node.proposeNewBlock()
             node.blockChain.add_block(MessageQueues.messageQueues.PendingBlock)
@@ -47,7 +47,7 @@ class PBFTNode:
         #print("Pre Save")
         # print(blockChain.serializeJSON())
 
-        BlockChainReadWrite.saveBlockChainToFile(node.blockChain)
+        #BlockChainReadWrite.saveBlockChainToFile(node.blockChain)
         
 
         time.sleep(2)

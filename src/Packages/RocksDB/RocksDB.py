@@ -3,25 +3,55 @@ import rocksdb
 class Rocks:
     db = rocksdb.DB("blockChainDB.db", rocksdb.Options(create_if_missing=True))
 
+    def getGroupsFromPublicKey(publicKeyString):
+        key = (publicKeyString + "Groups").encode()
+        return Rocks.db.get(key).decode()
 
-def getGroupsFromPublicKey(publicKeyString):
-    key = (publicKeyString + "Groups").encode()
-    return Rocks.db.get(key)
+    def setGroupsFromPublicKey(publicKeyString, GroupsString):
+        key = (publicKeyString + "Groups").encode()
+        Rocks.db.put(key, GroupsString.encode())
 
-def writeGroupsFromPublicKey(publicKeyString, GroupsString):
-    key = (publicKeyString + "Groups").encode()
-    Rocks.db.put(key, GroupsString.encode())
+    def getGroupFromGroupHash(groupHash):
+        key = (groupHash).encode()
+        return Rocks.db.get(key).decode()
 
-def getGroupFromGroupHash():
-    print("TBI")
+    def setGroupFromGroupHash(groupHash, GroupString):
+        key = (groupHash).encode()
+        Rocks.db.put(key, GroupString.encode())
+    
 
-def getTransactionFromHash():
-    print("TBI")
+    def getTransactionFromHash(hash):
+        key = (hash).encode()
+        return Rocks.db.get(key).decode()
 
-res = getGroupsFromPublicKey("asdf")
-print(res)
-if res == None:
-    writeGroupsFromPublicKey("asdf", "{groups; all the peoples}")
+
+
+
+
+    def getSentMessagesFromPublicKey(publicKeyString):
+        key = (publicKeyString + "Sent").encode()
+        return Rocks.db.get(key).decode()
+
+    def setSentMessagesFromPublicKey(publicKeyString, GroupsString):
+        key = (publicKeyString + "Sent").encode()
+        Rocks.db.put(key, GroupsString.encode())
+
+
+    def getRecievedMessagesFromPublicKey(publicKeyString):
+        key = (publicKeyString + "Recieved").encode()
+        return Rocks.db.get(key).decode()
+
+    def setRecievedMessagesFromPublicKey(publicKeyString, GroupsString):
+        key = (publicKeyString + "Recieved").encode()
+        Rocks.db.put(key, GroupsString.encode())
+
+
+
+
+
+
+
+
 
 
 

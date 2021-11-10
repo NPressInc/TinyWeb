@@ -9,6 +9,19 @@ class Serialization:
         return json.dumps(obj, default=lambda o: o.__dict__,sort_keys=True)
 
     @staticmethod
+    def deserializeObjFromJsonR(obj):
+        data = obj
+        while isinstance(data, str):
+            print(0)
+            data = json.loads(data)
+        return data
+
+    @staticmethod
+    def hashObject(obj):
+        objString = json.dumps(obj, sort_keys=True)
+        return hashlib.sha256(objString.encode()).hexdigest()
+
+    @staticmethod
     def compressJsonString(input):
         return brotli.compress(input)
 

@@ -167,20 +167,7 @@ class BlockChain:
 
         return BlockChain(**blockChainDict)
 
-    @staticmethod
-    def getGroupById():
-        print("TBI")
-
-
-    def getGroupsByPublicKey(self, publicKeyString):
-        outputGroups = []
-        for block in self.chain:
-            groups = block.findGroupsFromPublicKey(publicKeyString)
-            if len(groups) > 0:
-                for group in groups:
-                    outputGroups.append(group)
-        
-        return outputGroups
+    
 
 
 

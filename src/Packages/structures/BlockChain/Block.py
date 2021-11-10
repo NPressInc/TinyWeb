@@ -47,23 +47,6 @@ class Block:
         else:
             self.merkleTree = "Empty"
 
-
-    def findGroupsFromPublicKey(self, PublicKeyString):
-
-        groups = []
-
-        for tr in self.transactions:
-            if tr["messageType"] == "GroupDef":
-                if PublicKeyString in tr["entities"]:
-                    groups.append(tr)
-
-        return groups       
-        
-
-    def findGroupFromPublicGroupId(groupId):
-        print("TBI")
-
-
     def getHash(self):
             
         block_string = self.serializeJSONForHashing()
