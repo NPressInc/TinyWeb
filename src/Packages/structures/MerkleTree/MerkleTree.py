@@ -34,8 +34,6 @@ class MerkleTree:
             output += 1
         
         return output
-        
-
     
 
     def getTransactionNodeFromIndex(self, index):
