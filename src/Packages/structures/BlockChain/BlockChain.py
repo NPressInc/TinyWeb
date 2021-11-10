@@ -4,9 +4,7 @@ from typing_extensions import Concatenate
 import json
 
 import time
-import calendar
 
-from Packages.Communication.MessageReciever import Transaction
 from Packages.Serialization.Serialization import Serialization
 
 from .Block import Block
@@ -53,9 +51,7 @@ class BlockChain:
 
         groupDef["hash"] = groupHash
 
-        GroupDefjsonString = Serialization.serializeGroupDef(groupDef)
-
-        transactions.append(GroupDefjsonString)
+        transactions.append(groupDef)
 
         permissionNameHashDict = {}
 
@@ -75,8 +71,7 @@ class BlockChain:
 
             permissionNameHashDict[newPermission["name"]] = hash
 
-            permissionString = Serialization.serializePermissionDef(newPermission)
-            transactions.append(permissionString)
+            transactions.append(newPermission)
 
 
         roleHashDict = {}
@@ -99,8 +94,7 @@ class BlockChain:
 
             newRole["hash"] = hash
 
-            roleString = Serialization.serializeRoleDef(newRole)
-            transactions.append(roleString)
+            transactions.append(newRole)
 
 
         for key in RoleDict:
@@ -110,8 +104,7 @@ class BlockChain:
                 "roleHash": roleHashDict[RoleDict[key]],
                 "groupHash": groupHash
             }
-            roleAssignmentString = Serialization.serializeRoleAssignment(roleAssignment)
-            transactions.append(roleAssignmentString)
+            transactions.append(roleAssignment)
 
 
 
@@ -120,7 +113,7 @@ class BlockChain:
             #print(tr)
 
         genesis_block = Block(index=0,transactions= transactions, timestamp = time.time(), previous_hash="0",proposerId=-1)
-        genesis_block.hash = genesis_block.compute_hash()
+        genesis_block.hash = genesis_block.getHash()
         self.length += 1
         self.chain.append(genesis_block)
 
@@ -136,17 +129,13 @@ class BlockChain:
         * The previous_hash referred in the block and the hash of latest block
           in the chain match.
         """
-        previous_hash = self.last_block().hash
+        previous_hash = self.last_block().getHash()
 
         if previous_hash != block.previous_hash:
             raise Exception('block.previous_hash not equal to last_block_hash')
-            # print('block.previous_hash not equal to last_block_hash')
             return
         # else:
         #     print(str(previous_hash)+' == '+str(block.previous_hash))
-
-
-        block.hash = block.compute_hash()
         # print( 'New Hash : '+str(block.hash)+'\n\n')
         self.length += 1
         self.chain.append(block)
@@ -177,4 +166,21 @@ class BlockChain:
         blockChainDict["chain"] = blockArray
 
         return BlockChain(**blockChainDict)
+
+    @staticmethod
+    def getGroupById():
+        print("TBI")
+
+
+    def getGroupsByPublicKey(self, publicKeyString):
+        outputGroups = []
+        for block in self.chain:
+            groups = block.findGroupsFromPublicKey(publicKeyString)
+            if len(groups) > 0:
+                for group in groups:
+                    outputGroups.append(group)
+        
+        return outputGroups
+
+
 

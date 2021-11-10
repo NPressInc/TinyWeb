@@ -1,78 +1,54 @@
-import datetime
-import hashlib
-import sys
-import json
-from typing_extensions import Concatenate
-import threading
+
 import time
 import brotli
 
-from Packages.Serialization.Serialization import Serialization
+from Packages.Serialization.keySerialization import keySerialization
 from ..structures.BlockChain.BlockChain import BlockChain
 from ..structures.BlockChain.Block import Block
 from ..Verification.BlockVerification import BlockVerification
-from ..Communication.MessageReciever import messageQueues
+from ..Communication.NodeFlaskApi import MessageQueues
 from ..FileIO.readLoadBlockChain import BlockChainReadWrite
-from ..structures.Client.TinyWebClient import TinyWebClient
-from ..Verification.Signing import Signing
-from ..structures.RolesAndPermissions.RoleDefinitions import MegaAdminRole, RoleDefinitions
+from ..Client.TinyWebClient import TinyWebClient
+from ..structures.RolesAndPermissions.RoleDefinitions import RoleDefinitions
 from ..structures.RolesAndPermissions.PermissionDefinitions import PermissionDefinitions
 
 
+
 class PBFTNode:
-
-    @staticmethod
-    def configureBlockChainForFirstUse():
-        client1 = TinyWebClient.initializeClient("1")
-        client2 = TinyWebClient.initializeClient("2")
-        client3 = TinyWebClient.initializeClient("3")
-
-        baseGroupPublicKeys = []
-        client1PublicKeyString = Signing.PublicKeyMethods.serializePublicKey(
-            client1.publicKey)
-        baseGroupPublicKeys.append(client1PublicKeyString)
-
-        client2PublicKeyString = Signing.PublicKeyMethods.serializePublicKey(
-            client2.publicKey)
-        baseGroupPublicKeys.append(client2PublicKeyString)
-
-        client3PublicKeyString = Signing.PublicKeyMethods.serializePublicKey(
-            client3.publicKey)
-        baseGroupPublicKeys.append(client3PublicKeyString)
-
-        RoleDict = {}
-
-        RoleDict[client1PublicKeyString] = "SuperMemberRole"
-
-        RoleDict[client2PublicKeyString] = "MemberRole"
-
-        RoleDict[client3PublicKeyString] = "SubMemberRole"
-
-        blockChain = BlockChain(initialGroupMemebers=baseGroupPublicKeys, RoleDefinitions=RoleDefinitions,
-                                PermissionDefinitions=PermissionDefinitions, RoleDict=RoleDict)
-
-        # print(blockChain.serializeJSON())
-
-        return blockChain
-
+    node = None
     @staticmethod
     def runNode():
-        blockChain = PBFTNode.configureBlockChainForFirstUse()
+        blockChain = BlockChainReadWrite.readBlockChainFromFile()
+
+        if blockChain == None:
+            blockChain = PBFTNode.configureBlockChainForFirstUse()
 
         counter = 0
 
-        while counter < 4:
+        print(blockChain.last_block().index)
+
+        node = PBFTNode(0, blockChain)
+
+        PBFTNode.node = node
+
+
+        BlockChainReadWrite.saveBlockChainToFile(node.blockChain)
+
+        node.peers.append("me")
+        node.PeerIpDict["me"] = "http://127.0.0.1:5000/"
+
+        while counter < 100:
             time.sleep(3)
             counter += 1
-            node = PBFTNode(0, blockChain)
-            node.peers.append("me")
-            node.PeerIpDict["me"] = "http://127.0.0.1:5000/"
             node.proposeNewBlock()
-            node.blockChain.add_block(messageQueues.PendingBlock)
+            node.blockChain.add_block(MessageQueues.messageQueues.PendingBlock)
+            print("Added new block, to chain with hash" + node.blockChain.last_block().getHash())
 
         #print("Pre Save")
         # print(blockChain.serializeJSON())
+
         BlockChainReadWrite.saveBlockChainToFile(node.blockChain)
+        
 
         time.sleep(2)
 
@@ -95,8 +71,6 @@ class PBFTNode:
 
     def proposeNewBlock(self):
         self.ProposerId = self.calculateProposerId()
-        print(self.ProposerId)
-        print(self.id)
         if self.ProposerId == self.id:
             block = self.createBlock()
             self.verifyBlock(block)
@@ -109,29 +83,32 @@ class PBFTNode:
         print("TBI")
 
     def createBlock(self):
-        transactions = messageQueues.transactionQueue
+        transactions = MessageQueues.messageQueues.transactionQueue
         # print(transactions)
-        messageQueues.transactionQueue = []
+        MessageQueues.messageQueues.transactionQueue = []
         newIndex = self.blockChain.length
         timestamp = time.time()
         # print(timestamp)
-        previousHash = self.blockChain.chain[-1].hash
+        previousHash = self.blockChain.last_block().getHash()
         proposerId = self.id
         newIndex = self.blockChain.length
         block = Block(newIndex, transactions, timestamp,
                       previousHash, proposerId)
-        block.compute_hash()
+        
+        
         return block
 
     @staticmethod
     def verifyBlock(block):
 
-        print("include functionality for sending rejection messages to originators of faulty messages. Do this on a seperate thread.")
-        print("TBI")
+        #print("include functionality for sending rejection messages to originators of faulty messages. Do this on a seperate thread.")
+       #print("TBI")
         return True
 
     def broadcastBlockToPeers(self, block):
         import requests
+
+       
 
         for peer in self.peers:
             # print(block.serializeJSON())
@@ -146,9 +123,10 @@ class PBFTNode:
         print("Done Broadcasting new block")
 
     def calculateProposerId(self):
-        print("TBI: returns 0 every time")
-        print("algo: take the previous block proposerId and add 1 % len(peers)")
+        
         NumberOfPeers = len(self.peers)
+
+        return self.ProposerId
 
         if len(self.peers) < 1:
             return 0
@@ -163,3 +141,35 @@ class PBFTNode:
     @staticmethod
     def decompressJson(input):
         return brotli.decompress(input)
+
+    @staticmethod
+    def configureBlockChainForFirstUse():
+        client1 = TinyWebClient.initializeClient("1")
+        client2 = TinyWebClient.initializeClient("2")
+        client3 = TinyWebClient.initializeClient("3")
+
+        baseGroupPublicKeys = []
+        client1PublicKeyString = keySerialization.serializePublicKey(
+            client1.publicKey)
+        baseGroupPublicKeys.append(client1PublicKeyString)
+
+        client2PublicKeyString = keySerialization.serializePublicKey(
+            client2.publicKey)
+        baseGroupPublicKeys.append(client2PublicKeyString)
+
+        client3PublicKeyString = keySerialization.serializePublicKey(
+            client3.publicKey)
+        baseGroupPublicKeys.append(client3PublicKeyString)
+
+        RoleDict = {}
+
+        RoleDict[client1PublicKeyString] = "SuperMemberRole"
+
+        RoleDict[client2PublicKeyString] = "MemberRole"
+
+        RoleDict[client3PublicKeyString] = "SubMemberRole"
+
+        blockChain = BlockChain(initialGroupMemebers=baseGroupPublicKeys, RoleDefinitions=RoleDefinitions,
+                                PermissionDefinitions=PermissionDefinitions, RoleDict=RoleDict)
+
+        return blockChain

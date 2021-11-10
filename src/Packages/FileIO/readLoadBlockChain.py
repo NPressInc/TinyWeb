@@ -24,25 +24,28 @@ class BlockChainReadWrite:
         print("Saved BlockChain To File!")
     
     def readBlockChainFromFile():
+
+        try:
+            f = open("State/currentBlockChain.dat","rb")
+
+            CompressedBlockChainBytes = f.read()
+
+            blckChain = {}
         
-        f = open("State/currentBlockChain.dat","rb")
+            BlockChainBytes = brotli.decompress(CompressedBlockChainBytes)
 
-        CompressedBlockChainBytes = f.read()
+            decompressedString = BlockChainBytes.decode()
 
-        blckChain = {}
-       
-        BlockChainBytes = brotli.decompress(CompressedBlockChainBytes)
+            blckChain = BlockChain.deserializeJSON(decompressedString)
+            print("Loaded it")
 
+            f.close()
 
-        decompressedString = BlockChainBytes.decode()
+            return blckChain
+        except Exception as err:
+            print(err)
+            return None
 
-
-        blckChain = BlockChain.deserializeJSON(decompressedString)
-        print("Loaded it")
-
-        print(blckChain.serializeJSON())
-
-        f.close()
-
-        return blckChain
+        
+        
 

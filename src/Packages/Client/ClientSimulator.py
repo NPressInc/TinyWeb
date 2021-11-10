@@ -42,7 +42,15 @@ class ClientSimulator:
         data = Serialization.serializeObjToJson(transactionObject)
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         r = requests.post(url, data=data, headers=headers)
-        print("Done Broadcasting new block")
+        print("sent Transaction")
+
+    @staticmethod
+    def sendRequestGroups(publicKeyString):
+        url = "http://127.0.0.1:5001/GetAllGroups"
+        data = Serialization.serializeObjToJson({"publicKey":publicKeyString})
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        r = requests.post(url, data=data, headers=headers)
+        print(r.json)
 
 
     

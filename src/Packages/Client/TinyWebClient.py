@@ -1,6 +1,6 @@
 
 import json
-from ...Verification.Signing import Signing
+from ..Verification.Signing import Signing
 
 class TinyWebClient:
     def __init__(self, privateKey = None, publicKey = None,clientId = None ,LocationOn=None):

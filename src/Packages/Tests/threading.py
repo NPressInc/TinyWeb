@@ -4,15 +4,17 @@ import importlib.util
 import sys
 from typing import Counter
 
-from ..Communication.MessageReciever import app
+
 from ..structures.BlockChain.BlockChain import BlockChain
 from ..pBFT.node import PBFTNode
 
 from ..FileIO.readLoadBlockChain import BlockChainReadWrite
 
-from ..Communication.MessageReciever import messageQueues
+from ..Communication.NodeFlaskApi import MessageQueues, app
 
-from ..Tests.ClientSimulator import ClientSimulator
+from ..Communication.BlockChainQueryApi import BCQapp
+
+from ..Client.ClientSimulator import ClientSimulator
 
 
 
@@ -22,7 +24,6 @@ class ThreadingTests:
         
         blockChain = BlockChainReadWrite.readBlockChainFromFile()
 
-        print(blockChain.serializeJSON())
 
         counter = 0
         
@@ -33,7 +34,7 @@ class ThreadingTests:
             node.peers.append("me")
             node.PeerIpDict["me"] = "http://127.0.0.1:5000/"
             node.proposeNewBlock()
-            node.blockChain.add_block(messageQueues.PendingBlock)
+            node.blockChain.add_block(MessageQueues.messageQueues.PendingBlock)
 
         #print("Pre Save")
         #print(blockChain.serializeJSON())
@@ -47,8 +48,12 @@ class ThreadingTests:
         #print(blockChainRecovered.serializeJSON())
 
     @staticmethod
-    def runFlask():
+    def runNodeFlask():
         app.run(debug=False)
+
+    @staticmethod
+    def runBlockChainApiFlask():
+        BCQapp.run(debug=False, port=5001)
 
     @staticmethod
     def runFauxClient():
@@ -58,7 +63,7 @@ class ThreadingTests:
 
     @staticmethod
     def threadingTest():
-        FlaskThread = threading.Thread(target=ThreadingTests.runFlask)
+        FlaskThread = threading.Thread(target=ThreadingTests.runNodeFlask)
         nodeTestThread = threading.Thread(target=ThreadingTests.NodeTestFunc)
         FauxClientThread = threading.Thread(target=ThreadingTests.runFauxClient)
 

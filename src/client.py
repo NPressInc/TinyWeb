@@ -1,22 +1,25 @@
-from Packages.structures.TinyWebClient import TinyWebClient
+from Packages.Client.TinyWebClient import TinyWebClient
 from Packages.FileIO.readLoadClient import readLoadClient
 from Packages.Verification.Signing import Signing
 
+from Packages.Client.ApiConnector import apiConnectorMethods
 
 
-TinyWebClient
 
 
-client1 = TinyWebClient.initClient("1")
+client1 = TinyWebClient.initializeClient("1")
+
+client2 = TinyWebClient.initializeClient("2")
+
+client3 = TinyWebClient.initializeClient("3")
 
 
-client2 = TinyWebClient.initClient("2")
+apiConnectorMethods.getAllGroups(client1)
 
 
-print(client1.seriralizeJSON())
 
 
-print(client2.seriralizeJSON())
+
 
 
 
