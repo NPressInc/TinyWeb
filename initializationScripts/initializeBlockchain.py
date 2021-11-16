@@ -15,7 +15,7 @@ class blockChainInitialization:
     @staticmethod
     def sendTransactionsToBlockchain():
         transactions = []
-        peerDefTransaction = blockChainInitialization.initializePeerIpDictForTesting()
+        peerDefTransaction = blockChainInitialization.initializePeerListForTesting()
 
         transactions.append(peerDefTransaction)
 
@@ -36,7 +36,7 @@ class blockChainInitialization:
 
 
     @staticmethod   
-    def initializePeerIpDictForTesting():
+    def initializePeerListForTesting():
         peerList = []
         for i in range(0,4):
             peerList.append("http://127.0.0.1:" + str(5000 + i) +"/")
@@ -44,9 +44,7 @@ class blockChainInitialization:
         transaction = {
             "messageType": "PeerList",
             "peers": peerList
-
         }
-
         return transaction
 
     @staticmethod

@@ -2,6 +2,7 @@
 import time
 import brotli
 
+from Packages.Serialization.Serialization import Serialization
 from Packages.Serialization.keySerialization import keySerialization
 from Packages.structures.BlockChain.Parsers.BlockchainParser import BlockchainParser
 from ..structures.BlockChain.BlockChain import BlockChain
@@ -34,7 +35,7 @@ class PBFTNode:
 
         print(blockChain.last_block().index)
 
-        node = PBFTNode(0, blockChain)
+        node = PBFTNode(nodeId, blockChain)
 
         PBFTNode.node = node
 
@@ -50,6 +51,8 @@ class PBFTNode:
 
         while counter < 1000:
 
+            currentBlock = None
+
             if counter % 10 == 0:
                 BlockChainReadWrite.saveBlockChainToFile(node.blockChain)
                 newPeerList = BlockchainParser.getMostRecentPeerList(node.blockChain)
@@ -58,12 +61,96 @@ class PBFTNode:
 
             time.sleep(5)
             counter += 1
-            node.proposeNewBlock()
-            while MessageQueues.messageQueues.PendingBlock == None:
+            node.ProposerId = node.calculateProposerId()
+            if node.ProposerId == node.id:
+                currentBlock = node.createBlock()
+                node.verifyBlock(currentBlock)
+                node.broadcastBlockToPeers(currentBlock)
+                
+
+            else:
+                while MessageQueues.PendingBlock == None:
+                    time.sleep(1)
+                    print("Waiting for block to be proposed")
+                MessageQueues.PendingBlock = currentBlock
+            
+            MessageQueues.PendingBlock = None
+
+
+            #Validating the proposed block, wether it was the block that we proposed or someone else
+            
+            ValidateVote = False
+
+            if node.verifyBlock(currentBlock) == True:
+                ValidateVote = True
+
+            node.broadcastVerificationVotesToPeers(ValidateVote)
+
+
+            #Wait for the rest of the validation votes
+
+            while len(MessageQueues.validationVotes) < len(node.peers) - 1:
                 time.sleep(1)
-                print("Waiting for block Proposal")
-            node.blockChain.add_block(MessageQueues.messageQueues.PendingBlock)
-            print("Added new block, to chain with hash" + node.blockChain.last_block().getHash())
+
+            #Count the validation votes from other nodes and myself
+            
+            votesFor = 0
+            for i in range(len(MessageQueues.validationVotes)):
+                if MessageQueues.validationVotes[i] == True:
+                    votesFor += 1
+
+            faults = len(node.peers)-votesFor
+
+            print({"falts": faults})
+
+
+            MessageQueues.validationVotes = []
+
+            #Make sure that the number of validation votes is above the threshold and vote accordingly
+
+            commitVote = False
+
+            if votesFor >= 3*faults + 1:
+                commitVote = True
+            
+            node.broadcastCommitVotesToPeers(commitVote)
+
+
+            #Wait for the commit votes to come in
+
+            while len(MessageQueues.commitMessages) < len(node.peers) - 1:
+                time.sleep(1)
+
+            
+            commitBlock = False
+
+
+            #Make sure that the number of commit votes is above the threshold and vote accordingly
+
+
+            commitMessages = 0
+            for i in range(len(MessageQueues.commitMessages)):
+                if MessageQueues.commitMessages[i] == True:
+                    commitMessages += 1
+
+            faults = len(node.peers)-commitMessages
+
+            if commitMessages >= 3*faults + 1:
+                commitBlock = True
+
+
+            #if the commit votes are above the threshold, then commit the block
+
+
+            if commitBlock == True:
+                node.blockChain.add_block(currentBlock)
+                print("Added new block, to chain with hash" + node.blockChain.last_block().getHash())
+            else:
+                print("Block Didnt pass")
+
+
+
+            
 
         #print("Pre Save")
         # print(blockChain.serializeJSON())
@@ -89,25 +176,13 @@ class PBFTNode:
         self.blockChain = blockChain
 
         self.phase = 0
+        
 
-    def proposeNewBlock(self):
-        self.ProposerId = self.calculateProposerId()
-        if self.ProposerId == self.id:
-            block = self.createBlock()
-            self.verifyBlock(block)
-            self.broadcastBlockToPeers(block)
-
-        else:
-            print("TBI")
-            
-
-    def ListenForBlockProposals(self):
-        print("TBI")
 
     def createBlock(self):
-        transactions = MessageQueues.messageQueues.transactionQueue
+        transactions = MessageQueues.transactionQueue
         # print(transactions)
-        MessageQueues.messageQueues.transactionQueue = []
+        MessageQueues.transactionQueue = []
         newIndex = self.blockChain.length
         timestamp = time.time()
         # print(timestamp)
@@ -139,9 +214,37 @@ class PBFTNode:
                 print(r.status_code)
             except:
                 print("Node not found at: " + peer)
-           
-
+                
         print("Done Broadcasting new block")
+
+
+    def broadcastVerificationVotesToPeers(self, vote):
+        import requests
+        for peer in self.peers:
+            try:
+                url = peer + "VerificationVote"
+                data = {"vote": vote}
+                data = Serialization.serializeObjToJson(data)
+                headers = {'Content-type': 'application/json',
+                        'Accept': 'text/plain'}
+                r = requests.post(url, data=data, headers=headers)
+                print(r.status_code)
+            except:
+                print("Node not found at: " + peer)
+
+    def broadcastCommitVotesToPeers(self, vote):
+        import requests
+        for peer in self.peers:
+            try:
+                url = peer + "CommitVote"
+                data = {"vote": vote}
+                data = Serialization.serializeObjToJson(data)
+                headers = {'Content-type': 'application/json',
+                        'Accept': 'text/plain'}
+                r = requests.post(url, data=data, headers=headers)
+                print(r.status_code)
+            except:
+                print("Node not found at: " + peer)
 
     def calculateProposerId(self):
         

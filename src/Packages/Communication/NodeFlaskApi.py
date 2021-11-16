@@ -12,25 +12,12 @@ import json
 
 class MessageQueues:
     messageQueues = None
-    def __init__(self):
-        self.transactionQueue = []
-        self.PendingBlock = None
-        self.validationVotes = []
-        self.commitVotes = []
+    transactionQueue = []
+    PendingBlock = None
+    validationVotes = []
+    commitMessages = []
 
-    def getPendingBlock(self):
-        return self.PendingBlock
 
-    def setPendingBlock(self, PendingBlock):
-        self.PendingBlock = PendingBlock
-
-    def getPtransactionQueue(self):
-        return self.transactionQueue
-
-    def setTransactionQueue(self, transactionQueue):
-        self.transactionQueue = transactionQueue
-
-MessageQueues.messageQueues = MessageQueues()
 
 
 app = Flask(__name__)
@@ -48,19 +35,32 @@ def NewBlock():
     jsnString = json.dumps(jsn, indent=4, sort_keys=True)
 
     block = Block.deserializeJSON(jsnString)
-    MessageQueues.messageQueues.PendingBlock = block
+    MessageQueues.PendingBlock = block
 
     return "<p>Thank you for proposing your new block!</p>"
 
 
-@app.route("/BlockVerified")
-def BlockVerified():
-    return "<p>Hello, World!</p>"
+@app.route("/VerificationVote", methods=['POST'])
+def VerificationVote():
+    
+    voteJson = request.get_json()
+    print(voteJson)
+    MessageQueues.validationVotes.append(voteJson['vote'])
+    print(MessageQueues.validationVotes)
+
+    return jsonify({"response": "ok"})
 
 
-@app.route("/BlockCommitted")
-def BlockCommitted():
-    return "<p>Hello, World!</p>"
+
+@app.route("/CommitVote", methods=['POST'])
+def CommitVote():
+    voteJson = request.get_json()
+    print(voteJson)
+    MessageQueues.commitMessages.append(voteJson['vote'])
+
+    print(MessageQueues.commitMessages)
+
+    return jsonify({"response": "ok"})
 
 
 @app.route("/CheckBlockChain")
@@ -72,7 +72,7 @@ def CheckBlockChain():
 def Transaction():
     chainMessage = request.get_json()
     print(chainMessage)
-    MessageQueues.messageQueues.transactionQueue.append(chainMessage)
+    MessageQueues.transactionQueue.append(chainMessage)
     return json.dumps({"status":"ok"})
     """
      except Exception as e: 

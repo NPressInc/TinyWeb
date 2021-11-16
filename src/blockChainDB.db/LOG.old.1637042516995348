@@ -1,0 +1,95 @@
+2021/11/15-23:01:29.516630 7fed0b122740 RocksDB version: 6.7.3
+2021/11/15-23:01:29.516677 7fed0b122740 Git sha rocksdb_build_git_sha:@0@
+2021/11/15-23:01:29.516680 7fed0b122740 Compile date Apr 27 2020
+2021/11/15-23:01:29.516685 7fed0b122740 DB SUMMARY
+2021/11/15-23:01:29.516730 7fed0b122740 CURRENT file:  CURRENT
+2021/11/15-23:01:29.516732 7fed0b122740 IDENTITY file:  IDENTITY
+2021/11/15-23:01:29.516736 7fed0b122740 MANIFEST file:  MANIFEST-000107 size: 59 Bytes
+2021/11/15-23:01:29.516738 7fed0b122740 SST files in blockChainDB.db dir, Total Num: 0, files: 
+2021/11/15-23:01:29.516740 7fed0b122740 Write Ahead Log file in blockChainDB.db: 000108.log size: 0 ; 
+2021/11/15-23:01:29.516743 7fed0b122740                         Options.error_if_exists: 0
+2021/11/15-23:01:29.516744 7fed0b122740                       Options.create_if_missing: 1
+2021/11/15-23:01:29.516745 7fed0b122740                         Options.paranoid_checks: 1
+2021/11/15-23:01:29.516746 7fed0b122740                                     Options.env: 0x7fed08c50000
+2021/11/15-23:01:29.516747 7fed0b122740                                      Options.fs: Posix File System
+2021/11/15-23:01:29.516748 7fed0b122740                                Options.info_log: 0x1b1b040
+2021/11/15-23:01:29.516749 7fed0b122740                Options.max_file_opening_threads: 16
+2021/11/15-23:01:29.516750 7fed0b122740                              Options.statistics: (nil)
+2021/11/15-23:01:29.516751 7fed0b122740                               Options.use_fsync: 0
+2021/11/15-23:01:29.516752 7fed0b122740                       Options.max_log_file_size: 0
+2021/11/15-23:01:29.516752 7fed0b122740                  Options.max_manifest_file_size: 1073741824
+2021/11/15-23:01:29.516753 7fed0b122740                   Options.log_file_time_to_roll: 0
+2021/11/15-23:01:29.516754 7fed0b122740                       Options.keep_log_file_num: 1000
+2021/11/15-23:01:29.516754 7fed0b122740                    Options.recycle_log_file_num: 0
+2021/11/15-23:01:29.516755 7fed0b122740                         Options.allow_fallocate: 1
+2021/11/15-23:01:29.516756 7fed0b122740                        Options.allow_mmap_reads: 0
+2021/11/15-23:01:29.516757 7fed0b122740                       Options.allow_mmap_writes: 0
+2021/11/15-23:01:29.516757 7fed0b122740                        Options.use_direct_reads: 0
+2021/11/15-23:01:29.516758 7fed0b122740                        Options.use_direct_io_for_flush_and_compaction: 0
+2021/11/15-23:01:29.516759 7fed0b122740          Options.create_missing_column_families: 0
+2021/11/15-23:01:29.516759 7fed0b122740                              Options.db_log_dir: 
+2021/11/15-23:01:29.516760 7fed0b122740                                 Options.wal_dir: blockChainDB.db
+2021/11/15-23:01:29.516761 7fed0b122740                Options.table_cache_numshardbits: 6
+2021/11/15-23:01:29.516762 7fed0b122740                      Options.max_subcompactions: 1
+2021/11/15-23:01:29.516762 7fed0b122740                  Options.max_background_flushes: -1
+2021/11/15-23:01:29.516763 7fed0b122740                         Options.WAL_ttl_seconds: 0
+2021/11/15-23:01:29.516764 7fed0b122740                       Options.WAL_size_limit_MB: 0
+2021/11/15-23:01:29.516765 7fed0b122740                        Options.max_write_batch_group_size_bytes: 1048576
+2021/11/15-23:01:29.516765 7fed0b122740             Options.manifest_preallocation_size: 4194304
+2021/11/15-23:01:29.516766 7fed0b122740                     Options.is_fd_close_on_exec: 1
+2021/11/15-23:01:29.516767 7fed0b122740                   Options.advise_random_on_open: 1
+2021/11/15-23:01:29.516767 7fed0b122740                    Options.db_write_buffer_size: 0
+2021/11/15-23:01:29.516768 7fed0b122740                    Options.write_buffer_manager: 0x1b199d0
+2021/11/15-23:01:29.516769 7fed0b122740         Options.access_hint_on_compaction_start: 1
+2021/11/15-23:01:29.516770 7fed0b122740  Options.new_table_reader_for_compaction_inputs: 0
+2021/11/15-23:01:29.516771 7fed0b122740           Options.random_access_max_buffer_size: 1048576
+2021/11/15-23:01:29.516771 7fed0b122740                      Options.use_adaptive_mutex: 0
+2021/11/15-23:01:29.516783 7fed0b122740                            Options.rate_limiter: (nil)
+2021/11/15-23:01:29.516784 7fed0b122740     Options.sst_file_manager.rate_bytes_per_sec: 0
+2021/11/15-23:01:29.516785 7fed0b122740                       Options.wal_recovery_mode: 2
+2021/11/15-23:01:29.516786 7fed0b122740                  Options.enable_thread_tracking: 0
+2021/11/15-23:01:29.516787 7fed0b122740                  Options.enable_pipelined_write: 0
+2021/11/15-23:01:29.516787 7fed0b122740                  Options.unordered_write: 0
+2021/11/15-23:01:29.516788 7fed0b122740         Options.allow_concurrent_memtable_write: 1
+2021/11/15-23:01:29.516789 7fed0b122740      Options.enable_write_thread_adaptive_yield: 1
+2021/11/15-23:01:29.516790 7fed0b122740             Options.write_thread_max_yield_usec: 100
+2021/11/15-23:01:29.516791 7fed0b122740            Options.write_thread_slow_yield_usec: 3
+2021/11/15-23:01:29.516792 7fed0b122740                               Options.row_cache: None
+2021/11/15-23:01:29.516792 7fed0b122740                              Options.wal_filter: None
+2021/11/15-23:01:29.516793 7fed0b122740             Options.avoid_flush_during_recovery: 0
+2021/11/15-23:01:29.516794 7fed0b122740             Options.allow_ingest_behind: 0
+2021/11/15-23:01:29.516795 7fed0b122740             Options.preserve_deletes: 0
+2021/11/15-23:01:29.516795 7fed0b122740             Options.two_write_queues: 0
+2021/11/15-23:01:29.516796 7fed0b122740             Options.manual_wal_flush: 0
+2021/11/15-23:01:29.516797 7fed0b122740             Options.atomic_flush: 0
+2021/11/15-23:01:29.516798 7fed0b122740             Options.avoid_unnecessary_blocking_io: 0
+2021/11/15-23:01:29.516798 7fed0b122740                 Options.persist_stats_to_disk: 0
+2021/11/15-23:01:29.516799 7fed0b122740                 Options.write_dbid_to_manifest: 0
+2021/11/15-23:01:29.516800 7fed0b122740                 Options.log_readahead_size: 0
+2021/11/15-23:01:29.516801 7fed0b122740             Options.max_background_jobs: 2
+2021/11/15-23:01:29.516801 7fed0b122740             Options.max_background_compactions: -1
+2021/11/15-23:01:29.516802 7fed0b122740             Options.avoid_flush_during_shutdown: 0
+2021/11/15-23:01:29.516803 7fed0b122740           Options.writable_file_max_buffer_size: 1048576
+2021/11/15-23:01:29.516803 7fed0b122740             Options.delayed_write_rate : 16777216
+2021/11/15-23:01:29.516804 7fed0b122740             Options.max_total_wal_size: 0
+2021/11/15-23:01:29.516805 7fed0b122740             Options.delete_obsolete_files_period_micros: 21600000000
+2021/11/15-23:01:29.516806 7fed0b122740                   Options.stats_dump_period_sec: 600
+2021/11/15-23:01:29.516806 7fed0b122740                 Options.stats_persist_period_sec: 600
+2021/11/15-23:01:29.516807 7fed0b122740                 Options.stats_history_buffer_size: 1048576
+2021/11/15-23:01:29.516808 7fed0b122740                          Options.max_open_files: -1
+2021/11/15-23:01:29.516809 7fed0b122740                          Options.bytes_per_sync: 0
+2021/11/15-23:01:29.516810 7fed0b122740                      Options.wal_bytes_per_sync: 0
+2021/11/15-23:01:29.516810 7fed0b122740                   Options.strict_bytes_per_sync: 0
+2021/11/15-23:01:29.516811 7fed0b122740       Options.compaction_readahead_size: 0
+2021/11/15-23:01:29.516812 7fed0b122740 Compression algorithms supported:
+2021/11/15-23:01:29.516813 7fed0b122740 	kZSTDNotFinalCompression supported: 0
+2021/11/15-23:01:29.516815 7fed0b122740 	kZSTD supported: 0
+2021/11/15-23:01:29.516816 7fed0b122740 	kXpressCompression supported: 0
+2021/11/15-23:01:29.516817 7fed0b122740 	kLZ4HCCompression supported: 0
+2021/11/15-23:01:29.516817 7fed0b122740 	kLZ4Compression supported: 0
+2021/11/15-23:01:29.516818 7fed0b122740 	kBZip2Compression supported: 0
+2021/11/15-23:01:29.516819 7fed0b122740 	kZlibCompression supported: 0
+2021/11/15-23:01:29.516820 7fed0b122740 	kSnappyCompression supported: 0
+2021/11/15-23:01:29.516822 7fed0b122740 Fast CRC32 supported: Supported on x86
+2021/11/15-23:01:29.516851 7fed0b122740 [db_impl/db_impl.cc:397] Shutdown: canceling all background work
+2021/11/15-23:01:29.516872 7fed0b122740 [db_impl/db_impl.cc:573] Shutdown complete
