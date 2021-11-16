@@ -46,7 +46,7 @@ def VerificationVote():
     voteJson = request.get_json()
     print(voteJson)
     MessageQueues.validationVotes.append(voteJson['vote'])
-    print(MessageQueues.validationVotes)
+    print({"ValidationVotes":MessageQueues.validationVotes})
 
     return jsonify({"response": "ok"})
 
@@ -58,7 +58,7 @@ def CommitVote():
     print(voteJson)
     MessageQueues.commitMessages.append(voteJson['vote'])
 
-    print(MessageQueues.commitMessages)
+    print({"CommitMessages":MessageQueues.commitMessages})
 
     return jsonify({"response": "ok"})
 

@@ -20,7 +20,7 @@ class blockChainInitialization:
         transactions.append(peerDefTransaction)
 
         for ts in transactions:
-            for i in range(0,1):
+            for i in range(0,2):
                 blockChainInitialization.sendTransaction(ts, i)
 
 
@@ -38,7 +38,7 @@ class blockChainInitialization:
     @staticmethod   
     def initializePeerListForTesting():
         peerList = []
-        for i in range(0,4):
+        for i in range(0,2):
             peerList.append("http://127.0.0.1:" + str(5000 + i) +"/")
 
         transaction = {

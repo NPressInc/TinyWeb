@@ -8,3 +8,4 @@ docs/_build
 *.pyc
 *.so
 __pycache__
+blockChainDB.db/

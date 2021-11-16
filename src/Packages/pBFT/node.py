@@ -40,7 +40,7 @@ class PBFTNode:
         PBFTNode.node = node
 
 
-        BlockChainReadWrite.saveBlockChainToFile(node.blockChain)
+        #BlockChainReadWrite.saveBlockChainToFile(node.blockChain)
 
         node.peers.append("http://127.0.0.1:"+ str(5000 + nodeId) +"/")
 
@@ -54,7 +54,7 @@ class PBFTNode:
             currentBlock = None
 
             if counter % 10 == 0:
-                BlockChainReadWrite.saveBlockChainToFile(node.blockChain)
+                #BlockChainReadWrite.saveBlockChainToFile(node.blockChain)
                 newPeerList = BlockchainParser.getMostRecentPeerList(node.blockChain)
                 if newPeerList != None:
                     node.peers = newPeerList
@@ -132,6 +132,8 @@ class PBFTNode:
             for i in range(len(MessageQueues.commitMessages)):
                 if MessageQueues.commitMessages[i] == True:
                     commitMessages += 1
+
+            MessageQueues.commitMessages = []
 
             faults = len(node.peers)-commitMessages
 
