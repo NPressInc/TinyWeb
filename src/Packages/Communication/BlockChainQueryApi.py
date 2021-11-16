@@ -1,8 +1,8 @@
 from flask import Flask, request
 import json
 
-from Packages.structures.BlockChain.BlockParser import BlockParser
-from Packages.structures.BlockChain.BlockchainParser import BlockchainParser
+from Packages.structures.BlockChain.Parsers.BlockParser import BlockParser
+from Packages.structures.BlockChain.Parsers.BlockchainParser import BlockchainParser
 from ..Serialization.Serialization import Serialization
 
 from ..pBFT.node import PBFTNode
@@ -18,6 +18,7 @@ def hello_world():
 @BCQapp.route("/CheckBlockChain")
 def CheckBlockChain():
     return "<p>Hello, World!</p>"
+
 
 
 @BCQapp.route("/GetAllGroups", methods=['POST'])

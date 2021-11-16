@@ -16,7 +16,7 @@ class BlockChain:
     #RoleDefinitions = List of Dict
     #PermissionDefinitions = List of Dict
     # RoleDict = Dict of lists
-    def __init__(self, chain = None, length = None, initialGroupMemebers = None, RoleDefinitions = None, PermissionDefinitions = None, RoleDict = None):
+    def __init__(self, chain = None, length = None, creatorPublicKey = None):
 
 
         if length != None:
@@ -27,10 +27,10 @@ class BlockChain:
             self.chain = chain
         else:
             self.chain = []
-            self.create_genesis_block(initialGroupMemebers, RoleDefinitions, PermissionDefinitions, RoleDict)
+            self.create_genesis_block(creatorPublicKey)
 
 
-    def create_genesis_block(self, initialGroupMemebers, RoleDefinitions, PermissionDefinitions, RoleDict):
+    def create_genesis_block(self, creatorPublicKey):
         """
         A function to generate genesis block and appends it to
         the chain. The block has index 0, previous_hash as 0, and
@@ -38,75 +38,10 @@ class BlockChain:
         """
         transactions = []
 
-        groupDef = {
-            "messageType": "GroupDef",
-            "hash": "",
-            "creator": "-1",
-            "groupType": "People",
-            "entities": initialGroupMemebers,
-            "description": "Initial Group"
-        }
-
-        groupHash = Serialization.hashGroupDef(groupDef)
-
-        groupDef["hash"] = groupHash
-
-        transactions.append(groupDef)
-
-        permissionNameHashDict = {}
-
-        for Permission in PermissionDefinitions:
-
-            newPermission = {
-                "messageType": "PermissionDescriptor",
-                "name": Permission["name"],
-                "type": Permission["type"],
-                "scope": Permission["scope"],
-                "hash": "",
-                "creator": "-1"
-            }
-            hash = Serialization.hashPermissionDef(newPermission)
-
-            newPermission["hash"] = hash
-
-            permissionNameHashDict[newPermission["name"]] = hash
-
-            transactions.append(newPermission)
-
-
-        roleHashDict = {}
-
-        for RoleDef in RoleDefinitions:
-            newRole = {
-                "messageType": "RoleDescriptor",
-                "name": RoleDef["name"],
-                "hash": "",
-                "creator": "-1",
-                "permissionHashes": RoleDef["permissionHashes"]
-            }
-            for i in range(len(RoleDef["permissionHashes"])):
-                
-                newRole["permissionHashes"][i] = permissionNameHashDict[newRole["permissionHashes"][i]]
-
-            hash = Serialization.hashRoleDef(newRole)
-
-            roleHashDict[newRole["name"]] = hash
-
-            newRole["hash"] = hash
-
-            transactions.append(newRole)
-
-
-        for key in RoleDict:
-            roleAssignment = {
-                "messageType": "RoleAssignment",
-                "user": key,
-                "roleHash": roleHashDict[RoleDict[key]],
-                "groupHash": groupHash
-            }
-            transactions.append(roleAssignment)
-
-
+        transactions.append({
+            "messageType": "CreatorAssignment",
+            "creator": creatorPublicKey
+        })
 
         #for tr in transactions:
            #print("----------")

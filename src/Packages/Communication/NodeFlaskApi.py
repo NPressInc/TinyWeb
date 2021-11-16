@@ -71,6 +71,7 @@ def CheckBlockChain():
 @app.route("/Transaction", methods=['POST'])
 def Transaction():
     chainMessage = request.get_json()
+    print(chainMessage)
     MessageQueues.messageQueues.transactionQueue.append(chainMessage)
     return json.dumps({"status":"ok"})
     """

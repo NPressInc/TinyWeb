@@ -44,17 +44,3 @@ print(apiConnectorMethods.getSentMessages(client1))
 print("Recieved Messages")
 
 print(apiConnectorMethods.getReceivedMessages(client2))
-
-
-
-
-
-
-
-
-
-
-
-
-
-

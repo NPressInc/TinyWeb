@@ -3,14 +3,19 @@ import time
 import brotli
 
 from Packages.Serialization.keySerialization import keySerialization
+from Packages.structures.BlockChain.Parsers.BlockchainParser import BlockchainParser
 from ..structures.BlockChain.BlockChain import BlockChain
 from ..structures.BlockChain.Block import Block
 from ..Verification.BlockVerification import BlockVerification
 from ..Communication.NodeFlaskApi import MessageQueues
 from ..FileIO.readLoadBlockChain import BlockChainReadWrite
 from ..Client.TinyWebClient import TinyWebClient
-from ..structures.RolesAndPermissions.RoleDefinitions import RoleDefinitions
-from ..structures.RolesAndPermissions.PermissionDefinitions import PermissionDefinitions
+
+
+import sys
+nodeId = 0
+if len(sys.argv) > 2:
+    nodeId = int(sys.argv[2])
 
 
 
@@ -23,6 +28,8 @@ class PBFTNode:
         if blockChain == None:
             blockChain = PBFTNode.configureBlockChainForFirstUse()
 
+        print(blockChain.serializeJSON())
+
         counter = 0
 
         print(blockChain.last_block().index)
@@ -34,13 +41,27 @@ class PBFTNode:
 
         BlockChainReadWrite.saveBlockChainToFile(node.blockChain)
 
-        node.peers.append("me")
-        node.PeerIpDict["me"] = "http://127.0.0.1:5000/"
+        node.peers.append("http://127.0.0.1:"+ str(5000 + nodeId) +"/")
+
+        newPeerList = BlockchainParser.getMostRecentPeerList(node.blockChain)
+        if newPeerList != None:
+            node.peers = newPeerList
+
 
         while counter < 1000:
+
+            if counter % 10 == 0:
+                BlockChainReadWrite.saveBlockChainToFile(node.blockChain)
+                newPeerList = BlockchainParser.getMostRecentPeerList(node.blockChain)
+                if newPeerList != None:
+                    node.peers = newPeerList
+
             time.sleep(5)
             counter += 1
             node.proposeNewBlock()
+            while MessageQueues.messageQueues.PendingBlock == None:
+                time.sleep(1)
+                print("Waiting for block Proposal")
             node.blockChain.add_block(MessageQueues.messageQueues.PendingBlock)
             print("Added new block, to chain with hash" + node.blockChain.last_block().getHash())
 
@@ -53,7 +74,7 @@ class PBFTNode:
         time.sleep(2)
 
         #print("POST Read")
-        blockChainRecovered = BlockChainReadWrite.readBlockChainFromFile()
+        #blockChainRecovered = BlockChainReadWrite.readBlockChainFromFile()
 
     def __init__(self, id, blockChain):
         self.__privateKkey = None
@@ -67,7 +88,7 @@ class PBFTNode:
 
         self.blockChain = blockChain
 
-        self.PeerIpDict = {}
+        self.phase = 0
 
     def proposeNewBlock(self):
         self.ProposerId = self.calculateProposerId()
@@ -77,7 +98,8 @@ class PBFTNode:
             self.broadcastBlockToPeers(block)
 
         else:
-            print("Listen for block proposals")
+            print("TBI")
+            
 
     def ListenForBlockProposals(self):
         print("TBI")
@@ -107,18 +129,17 @@ class PBFTNode:
 
     def broadcastBlockToPeers(self, block):
         import requests
-
-       
-
         for peer in self.peers:
-            # print(block.serializeJSON())
-            url = self.PeerIpDict[peer] + "ProposeBlock"
-            data = block.serializeJSON()
-            headers = {'Content-type': 'application/json',
-                       'Accept': 'text/plain'}
-            r = requests.post(url, data=data, headers=headers)
-            print(r.status_code)
-            # print(r)
+            try:
+                url = peer + "ProposeBlock"
+                data = block.serializeJSON()
+                headers = {'Content-type': 'application/json',
+                        'Accept': 'text/plain'}
+                r = requests.post(url, data=data, headers=headers)
+                print(r.status_code)
+            except:
+                print("Node not found at: " + peer)
+           
 
         print("Done Broadcasting new block")
 
@@ -126,9 +147,7 @@ class PBFTNode:
         
         NumberOfPeers = len(self.peers)
 
-        return self.ProposerId
-
-        if len(self.peers) < 1:
+        if len(self.peers) < 1 or self.blockChain.chain[-1].proposerId == -1:
             return 0
 
         index = self.blockChain.chain[-1].proposerId + 1 % NumberOfPeers
@@ -145,31 +164,9 @@ class PBFTNode:
     @staticmethod
     def configureBlockChainForFirstUse():
         client1 = TinyWebClient.initializeClient("1")
-        client2 = TinyWebClient.initializeClient("2")
-        client3 = TinyWebClient.initializeClient("3")
 
-        baseGroupPublicKeys = []
-        client1PublicKeyString = keySerialization.serializePublicKey(
-            client1.publicKey)
-        baseGroupPublicKeys.append(client1PublicKeyString)
-
-        client2PublicKeyString = keySerialization.serializePublicKey(
-            client2.publicKey)
-        baseGroupPublicKeys.append(client2PublicKeyString)
-
-        client3PublicKeyString = keySerialization.serializePublicKey(
-            client3.publicKey)
-        baseGroupPublicKeys.append(client3PublicKeyString)
-
-        RoleDict = {}
-
-        RoleDict[client1PublicKeyString] = "SuperMemberRole"
-
-        RoleDict[client2PublicKeyString] = "MemberRole"
-
-        RoleDict[client3PublicKeyString] = "SubMemberRole"
-
-        blockChain = BlockChain(initialGroupMemebers=baseGroupPublicKeys, RoleDefinitions=RoleDefinitions,
-                                PermissionDefinitions=PermissionDefinitions, RoleDict=RoleDict)
+        client1PublicKeyString = keySerialization.serializePublicKey(client1.publicKey)
+        
+        blockChain = BlockChain(creatorPublicKey=client1PublicKeyString)
 
         return blockChain
