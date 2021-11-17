@@ -18,6 +18,7 @@ class keySerialization:
 
     @staticmethod
     def deserializePrivateKeyPemFromString(PEMString):
+        #PEMBytes = PEMString.encode("utf-8")
         private_key = serialization.load_pem_private_key(
                 PEMString,
                 password=None,
@@ -35,11 +36,27 @@ class keySerialization:
         format=serialization.PublicFormat.SubjectPublicKeyInfo
         )
         return public_pem.decode("utf-8")
-
+    
     @staticmethod
     def deserializePublicKey(PEMString):
-        public_key = serialization.load_pem_public_key(
-            PEMString,
-            backend=default_backend()
-        )
+        PEMBytes = PEMString.encode("utf-8")
+        public_key = serialization.load_pem_public_key(PEMBytes)
         return public_key
+
+
+
+
+    @staticmethod
+    def serializePublicKeyBytes(public_key: ec.EllipticCurvePublicKey):
+        public_pem = public_key.public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo
+        )
+        return public_pem
+
+    @staticmethod
+    def deserializePublicKeyBytes(PEMBytes):
+        public_key = serialization.load_pem_public_key(PEMBytes)
+        return public_key
+
+   

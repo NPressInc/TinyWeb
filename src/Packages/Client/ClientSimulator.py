@@ -1,42 +1,39 @@
 import requests
+
 from ..Serialization.Serialization import Serialization
 import time
 import sys
+from ..Verification.Signing import Signing
 nodeId = 0
 if len(sys.argv) > 2:
     nodeId = int(sys.argv[2])
 
 class ClientSimulator:
 
-    def __init__(self):
+    def __init__(self, privateKeySender,publicKeySender, publicKeyReciever):
         self.FauxTransactionList = []
-        self.initTransactions()
+        self.initTransactions(privateKeySender,publicKeySender, publicKeyReciever)
 
-    def initTransactions(self):
+    def initTransactions(self, privateKeySender , publicKeySender, publicKeyReciever):
 
-        self.FauxTransactionList.append({"from": "michel", "to":"jeffe", "content":"Lets Rage"})
-        self.FauxTransactionList.append({"from": "michel", "to":"jeffe", "content":"Lets Rage"})
-        self.FauxTransactionList.append({"from": "michel", "to":"jeffe", "content":"Lets Rage"})
-        self.FauxTransactionList.append({"from": "michel", "to":"jeffe", "content":"Lets Rage"})
-        self.FauxTransactionList.append({"from": "michel", "to":"jeffe", "content":"Lets Rage"})
-        self.FauxTransactionList.append({"from": "michel", "to":"jeffe", "content":"Lets Rage"})
-        self.FauxTransactionList.append({"from": "michel", "to":"jeffe", "content":"Lets Rage"})
-        self.FauxTransactionList.append({"from": "michel", "to":"jeffe", "content":"Lets Rage"})
-        self.FauxTransactionList.append({"from": "michel", "to":"jeffe", "content":"Lets Rage"})
-        self.FauxTransactionList.append({"from": "michel", "to":"jeffe", "content":"Lets Rage"})
-        self.FauxTransactionList.append({"from": "michel", "to":"jeffe", "content":"Lets Rage"})
 
-        self.FauxTransactionList.append({"from": "jeffe", "to":"michel", "content":"yeah lets riot"})
-        self.FauxTransactionList.append({"from": "jeffe", "to":"michel", "content":"yeah lets riot"})
-        self.FauxTransactionList.append({"from": "jeffe", "to":"michel", "content":"yeah lets riot"})
-        self.FauxTransactionList.append({"from": "jeffe", "to":"michel", "content":"yeah lets riot"})
-        self.FauxTransactionList.append({"from": "jeffe", "to":"michel", "content":"yeah lets riot"})
-        self.FauxTransactionList.append({"from": "jeffe", "to":"michel", "content":"yeah lets riot"})
-        self.FauxTransactionList.append({"from": "jeffe", "to":"michel", "content":"yeah lets riot"})
-        self.FauxTransactionList.append({"from": "jeffe", "to":"michel", "content":"yeah lets riot"})
-        self.FauxTransactionList.append({"from": "jeffe", "to":"michel", "content":"yeah lets riot"})
-        self.FauxTransactionList.append({"from": "jeffe", "to":"michel", "content":"yeah lets riot"})
-        self.FauxTransactionList.append({"from": "jeffe", "to":"michel", "content":"yeah lets riot"})
+        message1 = "Lets Rage"
+
+        message2 = "No, lets age"
+
+        signature1 = Signing.normalSigning(privateKeySender, message1)
+        signature2 = Signing.normalSigning(privateKeySender, message2)
+
+        self.FauxTransactionList.append({"sender": publicKeySender, "receiver":publicKeyReciever, "content":message1, "signature": signature1})
+        self.FauxTransactionList.append({"sender": publicKeySender, "receiver":publicKeyReciever, "content":message2, "signature": signature2})
+        self.FauxTransactionList.append({"sender": publicKeySender, "receiver":publicKeyReciever, "content":message1, "signature": signature1})
+        self.FauxTransactionList.append({"sender": publicKeySender, "receiver":publicKeyReciever, "content":message2, "signature": signature2})
+        self.FauxTransactionList.append({"sender": publicKeySender, "receiver":publicKeyReciever, "content":message1, "signature": signature1})
+        self.FauxTransactionList.append({"sender": publicKeySender, "receiver":publicKeyReciever, "content":message2, "signature": signature2})
+        self.FauxTransactionList.append({"sender": publicKeySender, "receiver":publicKeyReciever, "content":message1, "signature": signature1})
+        self.FauxTransactionList.append({"sender": publicKeySender, "receiver":publicKeyReciever, "content":message2, "signature": signature2})
+        self.FauxTransactionList.append({"sender": publicKeySender, "receiver":publicKeyReciever, "content":message1, "signature": signature1})
+        self.FauxTransactionList.append({"sender": publicKeySender, "receiver":publicKeyReciever, "content":message2, "signature": signature2})
 
         
 
@@ -55,7 +52,6 @@ class ClientSimulator:
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         r = requests.post(url, data=data, headers=headers)
         print(r.json)
-
 
     
     def sendTransactionsEverySoOften(self, secondsBetweenMessages, numberOfMessages):

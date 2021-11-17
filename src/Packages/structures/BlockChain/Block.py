@@ -55,7 +55,7 @@ class Block:
     
     @staticmethod
     def deserializeJSON(jsonString):
-        blockDict = json.loads(jsonString)
+        blockDict = Serialization.deserializeObjFromJsonR(jsonString)
         if blockDict["merkleTree"] != "Empty":
             blockDict["merkleTree"] = MerkleTree.deserializeJSON(blockDict["merkleTree"])
 

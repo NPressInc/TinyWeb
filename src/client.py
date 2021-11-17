@@ -2,6 +2,7 @@ from Packages.Client.TinyWebClient import TinyWebClient
 from Packages.FileIO.readLoadClient import readLoadClient
 from Packages.Serialization.keySerialization import keySerialization
 from Packages.Verification.Signing import Signing
+from Packages.Client.ClientSimulator import ClientSimulator
 
 from Packages.Client.ApiConnector import apiConnectorMethods
 
@@ -17,25 +18,14 @@ client2 = TinyWebClient.initializeClient("2")
 client3 = TinyWebClient.initializeClient("3")
 
 
-groups = apiConnectorMethods.getAllGroups(client1)
+
+serializedPublicKey1 = keySerialization.serializePublicKey(client1.publicKey)
+serializedPublicKey2 = keySerialization.serializePublicKey(client2.publicKey)
 
 
-serializedPublicKey = keySerialization.serializePublicKey(client1.publicKey)
+client1.sendTestMessages(client2)
 
-
-for group in groups:
-    for entity in group['entities']:
-        if entity != serializedPublicKey:
-            transaction = {
-                "messageType": "SMS",
-                "sender": serializedPublicKey,
-                "receiver": entity,
-                "context": "FirstMessage!"
-            }
-
-            apiConnectorMethods.sendTransaction(transaction)
-
-time.sleep(7)
+time.sleep(2)
 
 print("Done sending first messages")
 

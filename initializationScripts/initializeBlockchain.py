@@ -15,7 +15,10 @@ class blockChainInitialization:
     @staticmethod
     def sendTransactionsToBlockchain():
         transactions = []
-        peerDefTransaction = blockChainInitialization.initializePeerListForTesting()
+
+        daddyClient = TinyWebClient.initializeClient("1")
+
+        peerDefTransaction = blockChainInitialization.initializePeerListForTesting(daddyClient, 2)
 
         transactions.append(peerDefTransaction)
 
@@ -36,16 +39,30 @@ class blockChainInitialization:
 
 
     @staticmethod   
-    def initializePeerListForTesting():
+    def initializePeerListForTesting(daddyClient, numberOfPeers):
         peerList = []
-        for i in range(0,2):
+        for i in range(0, numberOfPeers):
             peerList.append("http://127.0.0.1:" + str(5000 + i) +"/")
+
+        publicKeyString = keySerialization.serializePublicKey(daddyClient.publicKey)
 
         transaction = {
             "messageType": "PeerList",
-            "peers": peerList
+            "peers": peerList,
+            "sender": publicKeyString
         }
-        return transaction
+
+        hash = Serialization.hashObject(transaction)
+
+        signature = daddyClient.signData(hash)
+
+        data = {
+            "signature": signature,
+            "transaction": transaction
+        }
+
+        
+        return data
 
     @staticmethod
     def createRolesDefTransactions(RoleDefinitions, permissionNameHashDict):

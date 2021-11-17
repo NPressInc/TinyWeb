@@ -22,7 +22,6 @@ def runBlockChainApiFlask():
 BCQAThread = threading.Thread(target=runBlockChainApiFlask)
 FlaskThread = threading.Thread(target=runNodeFlask)
 RunNodeThread = threading.Thread(target=PBFTNode.runNode)
-FauxClientThread = threading.Thread(target=ThreadingTests.runFauxClient)
 
 RunNodeThread.start()
 

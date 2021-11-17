@@ -8,7 +8,7 @@ class BlockVerification:
 
     @staticmethod
     def VerifyBlock(block):
-        print("TBI")
+        return True
     
     def VerifyTransaction(transaction):
         print("TBI")

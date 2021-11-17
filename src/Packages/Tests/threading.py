@@ -19,23 +19,18 @@ from ..Client.ClientSimulator import ClientSimulator
 class ThreadingTests:
 
 
-    @staticmethod
-    def runFauxClient():
-        CS = ClientSimulator()
-        CS.sendTransactionsEverySoOften(1, 12)
+    
         
 
     @staticmethod
     def threadingTest():
         FlaskThread = threading.Thread(target=ThreadingTests.runNodeFlask)
         nodeTestThread = threading.Thread(target=ThreadingTests.NodeTestFunc)
-        FauxClientThread = threading.Thread(target=ThreadingTests.runFauxClient)
 
         nodeTestThread.start()
 
         FlaskThread.start()
 
-        FauxClientThread.start()
 
 
 
@@ -43,7 +38,6 @@ class ThreadingTests:
 
 
 
-        FauxClientThread.join()
 
         nodeTestThread.join()
 

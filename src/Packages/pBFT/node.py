@@ -8,16 +8,15 @@ from Packages.structures.BlockChain.Parsers.BlockchainParser import BlockchainPa
 from ..structures.BlockChain.BlockChain import BlockChain
 from ..structures.BlockChain.Block import Block
 from ..Verification.BlockVerification import BlockVerification
-from ..Communication.NodeFlaskApi import MessageQueues
 from ..FileIO.readLoadBlockChain import BlockChainReadWrite
 from ..Client.TinyWebClient import TinyWebClient
+from ..Verification.Signing import Signing
 
 
 import sys
 nodeId = 0
 if len(sys.argv) > 2:
     nodeId = int(sys.argv[2])
-
 
 
 class PBFTNode:
@@ -51,122 +50,30 @@ class PBFTNode:
 
         while counter < 1000:
 
-            currentBlock = None
-
             if counter % 10 == 0:
                 #BlockChainReadWrite.saveBlockChainToFile(node.blockChain)
                 newPeerList = BlockchainParser.getMostRecentPeerList(node.blockChain)
                 if newPeerList != None:
                     node.peers = newPeerList
+                    print(node.peers)
+                else:
+                    print("peers havent Changed")
 
-            time.sleep(5)
+            time.sleep(1)
             counter += 1
-            node.ProposerId = node.calculateProposerId()
-            if node.ProposerId == node.id:
-                currentBlock = node.createBlock()
-                node.verifyBlock(currentBlock)
-                node.broadcastBlockToPeers(currentBlock)
-                
-
-            else:
-                while MessageQueues.PendingBlock == None:
-                    time.sleep(1)
-                    print("Waiting for block to be proposed")
-                MessageQueues.PendingBlock = currentBlock
             
-            MessageQueues.PendingBlock = None
 
 
             #Validating the proposed block, wether it was the block that we proposed or someone else
             
-            ValidateVote = False
-
-            if node.verifyBlock(currentBlock) == True:
-                ValidateVote = True
-
-            node.broadcastVerificationVotesToPeers(ValidateVote)
-
-
-            #Wait for the rest of the validation votes
-
-            while len(MessageQueues.validationVotes) < len(node.peers) - 1:
-                time.sleep(1)
-
-            #Count the validation votes from other nodes and myself
             
-            votesFor = 0
-            for i in range(len(MessageQueues.validationVotes)):
-                if MessageQueues.validationVotes[i] == True:
-                    votesFor += 1
-
-            faults = len(node.peers)-votesFor
-
-            print({"falts": faults})
-
-
-            MessageQueues.validationVotes = []
-
-            #Make sure that the number of validation votes is above the threshold and vote accordingly
-
-            commitVote = False
-
-            if votesFor >= 3*faults + 1:
-                commitVote = True
-            
-            node.broadcastCommitVotesToPeers(commitVote)
-
 
             #Wait for the commit votes to come in
 
-            while len(MessageQueues.commitMessages) < len(node.peers) - 1:
-                time.sleep(1)
-
-            
-            commitBlock = False
-
-
-            #Make sure that the number of commit votes is above the threshold and vote accordingly
-
-
-            commitMessages = 0
-            for i in range(len(MessageQueues.commitMessages)):
-                if MessageQueues.commitMessages[i] == True:
-                    commitMessages += 1
-
-            MessageQueues.commitMessages = []
-
-            faults = len(node.peers)-commitMessages
-
-            if commitMessages >= 3*faults + 1:
-                commitBlock = True
-
-
-            #if the commit votes are above the threshold, then commit the block
-
-
-            if commitBlock == True:
-                node.blockChain.add_block(currentBlock)
-                print("Added new block, to chain with hash" + node.blockChain.last_block().getHash())
-            else:
-                print("Block Didnt pass")
-
-
-
-            
-
-        #print("Pre Save")
-        # print(blockChain.serializeJSON())
-
-        #BlockChainReadWrite.saveBlockChainToFile(node.blockChain)
-        
-
-        time.sleep(2)
-
-        #print("POST Read")
-        #blockChainRecovered = BlockChainReadWrite.readBlockChainFromFile()
+           
 
     def __init__(self, id, blockChain):
-        self.__privateKkey = None
+        self.__privateKey = None
         self.publicKey = None
 
         self.id = id  # id represents the order in which nodes act as the proposer
@@ -178,38 +85,31 @@ class PBFTNode:
         self.blockChain = blockChain
 
         self.phase = 0
+
+        self.initializeKeys()
+
+    def initializeKeys(self):
+        client = None
+        try:
+            privateKey = Signing.PrivateKeyMethods.loadPrivateKeyNode(self.id)
+            self.publicKey=Signing.PrivateKeyMethods.generatePublicKeyFromPrivate(privateKey)
+            print("Loaded Client: " + self.id)
+        except:
+            self.__privateKey = Signing.PrivateKeyMethods.generatePrivateKey()
+            self.publicKey = Signing.PrivateKeyMethods.generatePublicKeyFromPrivate(self.__privateKey)
+            Signing.PrivateKeyMethods.savePrivateKeyNode(self.__privateKey, self.id)
+            print("Created New Node: " + str(self.id))
+
+        return client
         
-
-
-    def createBlock(self):
-        transactions = MessageQueues.transactionQueue
-        # print(transactions)
-        MessageQueues.transactionQueue = []
-        newIndex = self.blockChain.length
-        timestamp = time.time()
-        # print(timestamp)
-        previousHash = self.blockChain.last_block().getHash()
-        proposerId = self.id
-        newIndex = self.blockChain.length
-        block = Block(newIndex, transactions, timestamp,
-                      previousHash, proposerId)
-        
-        
-        return block
-
-    @staticmethod
-    def verifyBlock(block):
-
-        #print("include functionality for sending rejection messages to originators of faulty messages. Do this on a seperate thread.")
-       #print("TBI")
-        return True
-
-    def broadcastBlockToPeers(self, block):
+    
+    def reBroadcastMessage(self, data, route):
         import requests
         for peer in self.peers:
+            if peer == "http://127.0.0.1:" + str(5000 + self.id) + "/":
+                continue
             try:
-                url = peer + "ProposeBlock"
-                data = block.serializeJSON()
+                url = peer + route
                 headers = {'Content-type': 'application/json',
                         'Accept': 'text/plain'}
                 r = requests.post(url, data=data, headers=headers)
@@ -217,15 +117,53 @@ class PBFTNode:
             except:
                 print("Node not found at: " + peer)
                 
+        print("Done ReBroadcasted Block")
+
+    def broadcastBlockToPeers(self, block):
+        import requests
+        for peer in self.peers:
+            try:
+                url = peer + "ProposeBlock"
+                hash = block.getHash()
+                blockString = block.serializeJSON()
+                signature = Signing.normalSigning(self.__privateKey, hash)
+                data = {
+                    "blockData":blockString,
+                    "blockHash": hash,
+                    "sender": keySerialization.serializePublicKey(self.publicKey),
+                    "signature": signature
+                }
+                data = Serialization.serializeObjToJson(data)
+                headers = {'Content-type': 'application/json',
+                        'Accept': 'text/plain'}
+                
+                r = requests.post(url, data= data, headers=headers)
+                if r.status_code == requests.codes.ok:
+
+                    data = Serialization.deserializeObjFromJsonR(r.text)
+                    
+                    print(type(data))
+
+                    return data
+                else:
+                    return None
+            except:
+                print("Node not found at: " + peer)
+                
         print("Done Broadcasting new block")
 
 
-    def broadcastVerificationVotesToPeers(self, vote):
+    def broadcastVerificationVotesToPeers(self, blockHash):
         import requests
         for peer in self.peers:
             try:
                 url = peer + "VerificationVote"
-                data = {"vote": vote}
+                signature = Signing.normalSigning(self.__privateKey, blockHash)
+                data = {
+                    "sender": keySerialization.serializePublicKey(self.publicKey),
+                    "signature": signature,
+                    "blockHash": blockHash
+                }
                 data = Serialization.serializeObjToJson(data)
                 headers = {'Content-type': 'application/json',
                         'Accept': 'text/plain'}
@@ -234,12 +172,36 @@ class PBFTNode:
             except:
                 print("Node not found at: " + peer)
 
-    def broadcastCommitVotesToPeers(self, vote):
+    def broadcastCommitVotesToPeers(self, blockHash):
         import requests
         for peer in self.peers:
             try:
                 url = peer + "CommitVote"
-                data = {"vote": vote}
+                signature = Signing.normalSigning(self.__privateKey, blockHash)
+                data = {
+                    "sender": keySerialization.serializePublicKey(self.publicKey),
+                    "signature": signature,
+                    "blockHash": blockHash
+                }
+                data = Serialization.serializeObjToJson(data)
+                headers = {'Content-type': 'application/json',
+                        'Accept': 'text/plain'}
+                r = requests.post(url, data=data, headers=headers)
+                print(r.status_code)
+            except:
+                print("Node not found at: " + peer)
+
+    def broadcastNewRoundVotesToPeers(self, blockHash):
+        import requests
+        for peer in self.peers:
+            try:
+                url = peer + "NewRound"
+                signature = Signing.normalSigning(self.__privateKey, blockHash)
+                data = {
+                    "sender": keySerialization.serializePublicKey(self.publicKey),
+                    "signature": signature,
+                    "blockHash": blockHash
+                }
                 data = Serialization.serializeObjToJson(data)
                 headers = {'Content-type': 'application/json',
                         'Accept': 'text/plain'}
@@ -268,10 +230,9 @@ class PBFTNode:
 
     @staticmethod
     def configureBlockChainForFirstUse():
-        client1 = TinyWebClient.initializeClient("1")
 
+        client1 = TinyWebClient.initializeClient("1")
         client1PublicKeyString = keySerialization.serializePublicKey(client1.publicKey)
-        
         blockChain = BlockChain(creatorPublicKey=client1PublicKeyString)
 
         return blockChain
