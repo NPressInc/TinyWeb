@@ -23,7 +23,7 @@ class blockChainInitialization:
         transactions.append(peerDefTransaction)
 
         for ts in transactions:
-            for i in range(0,2):
+            for i in range(0,1):
                 blockChainInitialization.sendTransaction(ts, i)
 
 

@@ -28,11 +28,11 @@ class PBFTNode:
         if blockChain == None:
             blockChain = PBFTNode.configureBlockChainForFirstUse()
 
-        print(blockChain.serializeJSON())
+        
 
         counter = 0
 
-        print(blockChain.last_block().index)
+        print({"last Block Index": blockChain.last_block().index})
 
         node = PBFTNode(nodeId, blockChain)
 
@@ -54,10 +54,18 @@ class PBFTNode:
                 #BlockChainReadWrite.saveBlockChainToFile(node.blockChain)
                 newPeerList = BlockchainParser.getMostRecentPeerList(node.blockChain)
                 if newPeerList != None:
-                    node.peers = newPeerList
-                    print(node.peers)
-                else:
-                    print("peers havent Changed")
+                    newPeers = []
+                    for peer in newPeerList:
+                        if not(peer in node.peers):
+                            newPeers.append(peer)
+
+                    print({"newPeers": newPeers})
+                    if len(newPeers) != 0:  
+                        node.peers = newPeerList
+                        for peer in newPeerList:
+                            node.broadcastBlockChainToNewNode(peer)
+                    else:
+                        print("peers havent Changed")
 
             time.sleep(1)
             counter += 1
@@ -117,7 +125,7 @@ class PBFTNode:
             except:
                 print("Node not found at: " + peer)
                 
-        print("Done ReBroadcasted Block")
+        print("Done ReBroadcasting " + route)
 
     def broadcastBlockToPeers(self, block):
         import requests
@@ -141,8 +149,6 @@ class PBFTNode:
                 if r.status_code == requests.codes.ok:
 
                     data = Serialization.deserializeObjFromJsonR(r.text)
-                    
-                    print(type(data))
 
                     return data
                 else:
@@ -151,6 +157,39 @@ class PBFTNode:
                 print("Node not found at: " + peer)
                 
         print("Done Broadcasting new block")
+
+
+    def broadcastBlockChainToNewNode(self, peer):
+        import requests
+        import hashlib
+        try:
+            url = peer + "SendNewBlockChain"
+            blockChainString = self.blockChain.serializeJSON()
+            hash = hashlib.sha256(blockChainString.encode()).hexdigest()
+            signature = Signing.normalSigning(self.__privateKey, hash)
+            data = {
+                "blockChain":blockChainString,
+                "blockChainHash": hash,
+                "sender": keySerialization.serializePublicKey(self.publicKey),
+                "signature": signature
+            }
+            data = Serialization.serializeObjToJson(data)
+            headers = {'Content-type': 'application/json',
+                    'Accept': 'text/plain'}
+            
+            r = requests.post(url, data= data, headers=headers)
+            if r.status_code == requests.codes.ok:
+
+                data = Serialization.deserializeObjFromJsonR(r.text)
+                
+
+                return data
+            else:
+                return None
+        except:
+            print("Node not found at: " + peer)
+                
+        print("Done Broadcasting new blockchain")
 
 
     def broadcastVerificationVotesToPeers(self, blockHash):
@@ -168,7 +207,6 @@ class PBFTNode:
                 headers = {'Content-type': 'application/json',
                         'Accept': 'text/plain'}
                 r = requests.post(url, data=data, headers=headers)
-                print(r.status_code)
             except:
                 print("Node not found at: " + peer)
 

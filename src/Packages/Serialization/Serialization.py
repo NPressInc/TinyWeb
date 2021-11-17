@@ -10,10 +10,13 @@ class Serialization:
 
     @staticmethod
     def deserializeObjFromJsonR(obj):
+        counter = 0
         data = obj
         while isinstance(data, str):
-            print(0)
+            counter += 1
             data = json.loads(data)
+            if counter > 30:
+                break
         return data
 
     @staticmethod

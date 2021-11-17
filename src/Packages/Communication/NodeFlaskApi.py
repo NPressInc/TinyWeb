@@ -9,6 +9,8 @@ from ..Serialization.Serialization import Serialization
 
 from ..structures.BlockChain.Block import Block
 
+from ..structures.BlockChain.BlockChain import BlockChain
+
 from ..pBFT.node import PBFTNode
 
 from ..Verification.Signing import Signing
@@ -90,7 +92,11 @@ def Transaction():
         print("about to propose a block!")
         currentBlock = createBlock()
         BlockVerification.VerifyBlock(currentBlock)
-        print(PBFTNode.node.broadcastBlockToPeers(currentBlock))
+
+        #MessageQueues.PendingBlockDict[currentBlock.getHash()] = currentBlock
+
+        PBFTNode.node.broadcastBlockToPeers(currentBlock)
+        print("Sent Proposed Block")
 
     return json.dumps({"status":"ok"})
 
@@ -151,7 +157,7 @@ def VerificationVote():
 
     if recievedHash in MessageQueues.PendingBlockDict:
         if recievedHash in MessageQueues.validationVotes:
-            if proposer in MessageQueues.PendingBlockDict[recievedHash]:
+            if proposer in MessageQueues.validationVotes[recievedHash]:
                 return json.dumps({"response": "Vote Already Counted"})
 
         try:
@@ -193,7 +199,7 @@ def CommitVote():
 
     if recievedHash in MessageQueues.PendingBlockDict:
         if recievedHash in MessageQueues.commitMessages:
-            if proposer in MessageQueues.PendingBlockDict[recievedHash]:
+            if proposer in MessageQueues.commitMessages[recievedHash]:
                 return json.dumps({"response": "Vote Already Counted"})
 
         try:
@@ -214,7 +220,7 @@ def CommitVote():
 
             PBFTNode.node.blockChain.add_block(MessageQueues.PendingBlockDict[recievedHash])
 
-            print(len(PBFTNode.node.blockChain.chain))
+            print({"BlockChainLength": len(PBFTNode.node.blockChain.chain)})
 
             PBFTNode.node.broadcastNewRoundVotesToPeers(recievedHash)
 
@@ -240,7 +246,7 @@ def NewRound():
 
     if recievedHash in MessageQueues.PendingBlockDict:
         if recievedHash in MessageQueues.newRoundMessages:
-            if proposer in MessageQueues.PendingBlockDict[recievedHash]:
+            if proposer in MessageQueues.newRoundMessages[recievedHash]:
                 return json.dumps({"response": "Vote Already Counted"})
 
 
@@ -265,11 +271,6 @@ def NewRound():
             del MessageQueues.newRoundMessages[recievedHash]
             MessageQueues.transactionQueue = {}
 
-            print(MessageQueues.PendingBlockDict)
-            print(MessageQueues.validationVotes)
-            print(MessageQueues.commitMessages)
-            print(MessageQueues.newRoundMessages)
-
             return jsonify({"response": "Cleared Queues"})
         
         return jsonify({"response": "Recieved new round but didnt hit threshold to clear"})
@@ -278,9 +279,30 @@ def NewRound():
 
 
 
-@app.route("/CheckBlockChain")
+@app.route("/SendNewBlockChain", methods=['POST'])
 def CheckBlockChain():
-    return "<p>Hello, World!</p>"
+
+    jsn = request.get_json()
+
+    proposer = jsn['sender']
+
+    signature = jsn['signature']
+
+    recievedHash = jsn['blockChainHash']
+
+    blockchainString = jsn['blockChain']
+
+    try:
+        Signing.verifyingTheSignature(keySerialization.deserializePublicKey(proposer), signature, recievedHash)
+    except:
+        return json.dumps({"response": "KeyError"})
+
+    PBFTNode.node.blockChain = BlockChain.deserializeJSON(blockchainString)
+
+    return json.dumps({"response":"thankyoufor the blockchain"})
+
+
+    
 
 
 
@@ -289,6 +311,5 @@ def GetAllGroups():
     jsn = request.get_json()
     publicKey = jsn["PublicKey"]
 
-    print(publicKey)
 
     return jsonify({"responsedddd": "okddd"})

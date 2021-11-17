@@ -53,7 +53,6 @@ class MerkleTree:
 
         currNode = self.rootNode
         for direction in navigation:
-            print(currNode.value)
             if direction == "0":
                 currNode = currNode.left
             else:

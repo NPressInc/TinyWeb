@@ -12,7 +12,6 @@ class Serialization:
     def deserializeObjFromJsonR(obj):
         data = obj
         while isinstance(data, str):
-            print(0)
             data = json.loads(data)
         return data
 

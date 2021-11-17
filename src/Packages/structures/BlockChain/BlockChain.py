@@ -1,6 +1,8 @@
 
 from typing_extensions import Concatenate
 
+import hashlib
+
 import json
 
 import time
@@ -85,6 +87,11 @@ class BlockChain:
             outputStructure["chain"].append(block.serializeJSON())
 
         return json.dumps(outputStructure , sort_keys=True)
+
+    def getHash(self):
+        BCString = self.serializeJSON()
+        hash = hashlib.sha256(BCString.encode()).hexdigest()
+        return hash
 
     @staticmethod
     def deserializeJSON(BlockChainString):
