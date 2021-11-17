@@ -71,14 +71,13 @@ def Transaction():
     transactionHash = Serialization.hashObject(jsn['transaction'])
     pubKey = keySerialization.deserializePublicKey(proposer)
 
+    if transactionHash in MessageQueues.transactionQueue:
+        return json.dumps({"response": "Transaction Already Queued"})
 
     try:
         Signing.verifyingTheSignature(pubKey, signature,transactionHash)
     except:
         return json.dumps({"response": "KeyError"})
-
-    if transactionHash in MessageQueues.transactionQueue:
-        return json.dumps({"response": "Transaction Already Queued"})
 
     MessageQueues.transactionQueue[transactionHash] = jsn['transaction']
 
@@ -113,6 +112,9 @@ def NewBlock():
 
     recievedHash = jsn['blockHash']
 
+    if keySerialization.serializePublicKey(PBFTNode.node.publicKey) == proposer:
+        return json.dumps({"response": "Wont Count Own Vote"})
+
     jsnString = json.dumps(blockjsn, indent=4, sort_keys=True)
 
     if recievedHash in MessageQueues.PendingBlockDict:
@@ -129,9 +131,9 @@ def NewBlock():
     hash = block.getHash()
     if recievedHash == hash and BlockVerification.VerifyBlock(block):
 
-        PBFTNode.node.reBroadcastMessage(Serialization.serializeObjToJson(jsn), "ProposeBlock")
-
         MessageQueues.PendingBlockDict[hash] = block
+
+        PBFTNode.node.reBroadcastMessage(Serialization.serializeObjToJson(jsn), "ProposeBlock")
 
         PBFTNode.node.broadcastVerificationVotesToPeers(recievedHash)
 
@@ -150,6 +152,9 @@ def VerificationVote():
     jsn = request.get_json()
 
     proposer = jsn['sender']
+
+    if keySerialization.serializePublicKey(PBFTNode.node.publicKey) == proposer:
+        return json.dumps({"response": "Wont Count Own Vote"})
 
     signature = jsn['signature']
 
@@ -174,7 +179,7 @@ def VerificationVote():
 
         faults = len(PBFTNode.node.peers) - len(MessageQueues.validationVotes[recievedHash])
 
-        if len(MessageQueues.validationVotes[recievedHash]) >= 2*faults + 1:
+        if len(MessageQueues.validationVotes[recievedHash]) >= 1:
             PBFTNode.node.broadcastCommitVotesToPeers(recievedHash)
 
             return jsonify({"response": "Broadcasted Commit"})
@@ -197,6 +202,9 @@ def CommitVote():
 
     recievedHash = jsn['blockHash']
 
+    if keySerialization.serializePublicKey(PBFTNode.node.publicKey) == proposer:
+        return json.dumps({"response": "Wont Count Own Vote"})
+
     if recievedHash in MessageQueues.PendingBlockDict:
         if recievedHash in MessageQueues.commitMessages:
             if proposer in MessageQueues.commitMessages[recievedHash]:
@@ -216,7 +224,7 @@ def CommitVote():
 
         faults = len(PBFTNode.node.peers) - len(MessageQueues.commitMessages[recievedHash])
 
-        if len(MessageQueues.commitMessages[recievedHash]) >= 2*faults + 1:
+        if len(MessageQueues.commitMessages[recievedHash]) >= 1:
 
             PBFTNode.node.blockChain.add_block(MessageQueues.PendingBlockDict[recievedHash])
 
@@ -244,6 +252,9 @@ def NewRound():
 
     recievedHash = jsn['blockHash']
 
+    if keySerialization.serializePublicKey(PBFTNode.node.publicKey) == proposer:
+        return json.dumps({"response": "Wont Count Own Vote"})
+
     if recievedHash in MessageQueues.PendingBlockDict:
         if recievedHash in MessageQueues.newRoundMessages:
             if proposer in MessageQueues.newRoundMessages[recievedHash]:
@@ -265,6 +276,7 @@ def NewRound():
         faults = len(PBFTNode.node.peers) - len(MessageQueues.newRoundMessages[recievedHash])
 
         if len(MessageQueues.newRoundMessages[recievedHash]) >= 2*faults + 1:
+            print("Clearing House")
             del MessageQueues.PendingBlockDict[recievedHash]
             del MessageQueues.validationVotes[recievedHash]
             del MessageQueues.commitMessages[recievedHash]
@@ -291,6 +303,9 @@ def CheckBlockChain():
     recievedHash = jsn['blockChainHash']
 
     blockchainString = jsn['blockChain']
+
+    if keySerialization.serializePublicKey(PBFTNode.node.publicKey) == proposer:
+        return json.dumps({"response": "Wont Count Own Vote"})
 
     try:
         Signing.verifyingTheSignature(keySerialization.deserializePublicKey(proposer), signature, recievedHash)
