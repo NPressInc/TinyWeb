@@ -19,7 +19,7 @@ def runBlockChainApiFlask():
     BCQapp.run(debug=False, port=5050 + nodeId)
 
 #runBlockChainApiFlask
-BCQAThread = threading.Thread(target=runBlockChainApiFlask)
+#BCQAThread = threading.Thread(target=runBlockChainApiFlask)
 FlaskThread = threading.Thread(target=runNodeFlask)
 RunNodeThread = threading.Thread(target=PBFTNode.runNode)
 
@@ -27,13 +27,13 @@ RunNodeThread.start()
 
 FlaskThread.start()
 
-BCQAThread.start()
+#BCQAThread.start()
 
 
 time.sleep(1000)
 
 
-BCQAThread.join()
+#BCQAThread.join()
 
 RunNodeThread.join()
 

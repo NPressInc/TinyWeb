@@ -66,7 +66,15 @@ class BlockChain:
         * The previous_hash referred in the block and the hash of latest block
           in the chain match.
         """
+
+        #print({"blockchain before adding":self.getListOfBlockHashes()})
+
+
         previous_hash = self.last_block().getHash()
+
+        #print({"adding block, last hash": previous_hash})
+
+        #print({"adding block, proposed block previous hash": block.previous_hash})
 
         if previous_hash != block.previous_hash:
             raise Exception('block.previous_hash not equal to last_block_hash')
@@ -76,6 +84,8 @@ class BlockChain:
         # print( 'New Hash : '+str(block.hash)+'\n\n')
         self.length += 1
         self.chain.append(block)
+
+        #print({"blockchain after adding":self.getListOfBlockHashes()})
     
     def serializeJSON(self):
         outputStructure = {
@@ -92,6 +102,13 @@ class BlockChain:
         BCString = self.serializeJSON()
         hash = hashlib.sha256(BCString.encode()).hexdigest()
         return hash
+
+    def getListOfBlockHashes(self):
+        output = []
+        for block in self.chain:
+            output.append(block.getHash())
+        return output
+
 
     @staticmethod
     def deserializeJSON(BlockChainString):

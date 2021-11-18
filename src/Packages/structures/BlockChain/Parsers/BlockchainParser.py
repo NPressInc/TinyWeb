@@ -1,4 +1,4 @@
-from ....RocksDB.RocksDB import Rocks
+#from ....RocksDB.RocksDB import Rocks
 import json
 
 from .BlockParser import BlockParser
@@ -12,6 +12,9 @@ class BlockchainParser:
             if peerlist != None:
                 return peerlist['peers']
         return None
+
+
+    """
 
     @staticmethod
     def getGroupByHash(blockchain, hash):
@@ -102,3 +105,6 @@ class BlockchainParser:
         Rocks.setSentMessagesFromPublicKey(
             publicKeyString, json.dumps(outputMessages))
         return outputMessages
+    
+    """
+

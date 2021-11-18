@@ -21,6 +21,7 @@ import json
 
 import time
 
+import asyncio
 
 def createBlock():
     transactions = []
@@ -40,12 +41,15 @@ def createBlock():
     return block
 
 class MessageQueues:
+    PendingBlockVerificationRecord = {}
     transactionQueue = {}
     PendingBlockDict = {}
     validationVotes = {}
     commitMessages = {}
     newRoundMessages = {}
-    transactionQueueLimit = 5
+    transactionQueueLimit = 2
+    blockChainParent = ""
+    
 
 app = Flask(__name__)
 
@@ -83,19 +87,32 @@ def Transaction():
 
     PBFTNode.node.reBroadcastMessage(Serialization.serializeObjToJson(jsn), "Transaction")
 
+    time.sleep(1)
+
     PBFTNode.node.ProposerId = PBFTNode.node.calculateProposerId()
 
     print({"ProposerId":PBFTNode.node.ProposerId})
 
     if len(MessageQueues.transactionQueue) > MessageQueues.transactionQueueLimit and PBFTNode.node.ProposerId == PBFTNode.node.id:
         print("about to propose a block!")
+
+        PBFTNode.node.requestMissingBlocks()
+
         currentBlock = createBlock()
         BlockVerification.VerifyBlock(currentBlock)
 
-        #MessageQueues.PendingBlockDict[currentBlock.getHash()] = currentBlock
+        blockHash = currentBlock.getHash()
+        
+
+        MessageQueues.PendingBlockDict[blockHash] = currentBlock
+
+        print({"Proposed Block previous hash":currentBlock.previous_hash})
+
+        print({"Proposed Block blockchais Hashes":PBFTNode.node.blockChain.getListOfBlockHashes()})
 
         PBFTNode.node.broadcastBlockToPeers(currentBlock)
-        print("Sent Proposed Block")
+
+        PBFTNode.node.broadcastVerificationVotesToPeers(blockHash)
 
     return json.dumps({"status":"ok"})
 
@@ -112,13 +129,13 @@ def NewBlock():
 
     recievedHash = jsn['blockHash']
 
-    if keySerialization.serializePublicKey(PBFTNode.node.publicKey) == proposer:
-        return json.dumps({"response": "Wont Count Own Vote"})
-
     jsnString = json.dumps(blockjsn, indent=4, sort_keys=True)
 
+    myPublicKey = keySerialization.serializePublicKey(PBFTNode.node.publicKey)
+    
+
     if recievedHash in MessageQueues.PendingBlockDict:
-        return json.dumps({"response": "Block Already Proposed"})
+        return json.dumps({"response": "Block Verified by Node"})
 
     try:
         Signing.verifyingTheSignature(keySerialization.deserializePublicKey(proposer), signature, recievedHash)
@@ -129,11 +146,24 @@ def NewBlock():
 
     block = Block.deserializeJSON(jsnString)
     hash = block.getHash()
+
+    
+
+    lastHash = PBFTNode.node.blockChain.last_block().getHash()
+
+    if block.previous_hash != lastHash:
+        PBFTNode.node.requestMissingBlocks()
+
     if recievedHash == hash and BlockVerification.VerifyBlock(block):
+
+        print("about to send verification")
+
+        MessageQueues.PendingBlockVerificationRecord[proposer] = recievedHash
 
         MessageQueues.PendingBlockDict[hash] = block
 
         PBFTNode.node.reBroadcastMessage(Serialization.serializeObjToJson(jsn), "ProposeBlock")
+        time.sleep(1)
 
         PBFTNode.node.broadcastVerificationVotesToPeers(recievedHash)
 
@@ -153,8 +183,6 @@ def VerificationVote():
 
     proposer = jsn['sender']
 
-    if keySerialization.serializePublicKey(PBFTNode.node.publicKey) == proposer:
-        return json.dumps({"response": "Wont Count Own Vote"})
 
     signature = jsn['signature']
 
@@ -177,9 +205,20 @@ def VerificationVote():
 
         PBFTNode.node.reBroadcastMessage(Serialization.serializeObjToJson(jsn), "VerificationVote")
 
-        faults = len(PBFTNode.node.peers) - len(MessageQueues.validationVotes[recievedHash])
+        reachedThreshold = False
 
-        if len(MessageQueues.validationVotes[recievedHash]) >= 1:
+        if len(PBFTNode.node.peers) == 1 or len(PBFTNode.node.peers) == 2:
+            print({"Validation Votes: ": MessageQueues.validationVotes[recievedHash]})
+            if len(MessageQueues.validationVotes[recievedHash]) == len(PBFTNode.node.peers)+1:
+                reachedThreshold = True
+            
+        elif len(PBFTNode.node.peers) > 2:
+            minApprovals = int(2 * (len(PBFTNode.node.peers) / 3) + 1)
+            if minApprovals >= len(MessageQueues.validationVotes[recievedHash]):
+                reachedThreshold = True
+
+        if reachedThreshold:
+            print("about to send commit")
             PBFTNode.node.broadcastCommitVotesToPeers(recievedHash)
 
             return jsonify({"response": "Broadcasted Commit"})
@@ -202,9 +241,6 @@ def CommitVote():
 
     recievedHash = jsn['blockHash']
 
-    if keySerialization.serializePublicKey(PBFTNode.node.publicKey) == proposer:
-        return json.dumps({"response": "Wont Count Own Vote"})
-
     if recievedHash in MessageQueues.PendingBlockDict:
         if recievedHash in MessageQueues.commitMessages:
             if proposer in MessageQueues.commitMessages[recievedHash]:
@@ -218,13 +254,35 @@ def CommitVote():
         if not(recievedHash in MessageQueues.commitMessages):
             MessageQueues.commitMessages[recievedHash] = []
 
+        print({"in commitVote, recievedHash": recievedHash})
         MessageQueues.commitMessages[recievedHash].append(proposer)
+
+        print({"InCommitVote, commitMessages":MessageQueues.commitMessages[recievedHash] })
 
         PBFTNode.node.reBroadcastMessage(Serialization.serializeObjToJson(jsn), "CommitVote")
 
-        faults = len(PBFTNode.node.peers) - len(MessageQueues.commitMessages[recievedHash])
+        reachedThreshold = False
 
-        if len(MessageQueues.commitMessages[recievedHash]) >= 1:
+        if len(PBFTNode.node.peers) == 1 or len(PBFTNode.node.peers) == 2:
+
+            if len(MessageQueues.commitMessages[recievedHash]) >= len(PBFTNode.node.peers) + 1:
+                reachedThreshold = True
+            
+        elif len(PBFTNode.node.peers) > 2:
+            minApprovals = int(2 * (len(PBFTNode.node.peers) / 3) + 1)
+            if minApprovals >= len(MessageQueues.commitMessages[recievedHash]):
+                reachedThreshold = True
+
+
+        if reachedThreshold:
+
+            print({"Proposed Block":MessageQueues.PendingBlockDict[recievedHash].getHash()})
+
+            print({"Proposed Block previous hash":MessageQueues.PendingBlockDict[recievedHash].previous_hash})
+
+            print({"Proposed Block blockchais Hashes":PBFTNode.node.blockChain.getListOfBlockHashes()})
+
+            print("about to send newRound")
 
             PBFTNode.node.blockChain.add_block(MessageQueues.PendingBlockDict[recievedHash])
 
@@ -252,9 +310,6 @@ def NewRound():
 
     recievedHash = jsn['blockHash']
 
-    if keySerialization.serializePublicKey(PBFTNode.node.publicKey) == proposer:
-        return json.dumps({"response": "Wont Count Own Vote"})
-
     if recievedHash in MessageQueues.PendingBlockDict:
         if recievedHash in MessageQueues.newRoundMessages:
             if proposer in MessageQueues.newRoundMessages[recievedHash]:
@@ -273,14 +328,28 @@ def NewRound():
 
         PBFTNode.node.reBroadcastMessage(Serialization.serializeObjToJson(jsn), "NewRound")
 
-        faults = len(PBFTNode.node.peers) - len(MessageQueues.newRoundMessages[recievedHash])
+        reachedThreshold = False        
 
-        if len(MessageQueues.newRoundMessages[recievedHash]) >= 2*faults + 1:
+        if len(PBFTNode.node.peers) == 1 or len(PBFTNode.node.peers) == 2:
+
+            if len(MessageQueues.newRoundMessages[recievedHash]) == len(PBFTNode.node.peers) + 1:
+                reachedThreshold = True
+            
+        elif len(PBFTNode.node.peers) > 2:
+            minApprovals = int(2 * (len(PBFTNode.node.peers) / 3) + 1)
+            if minApprovals >= len(MessageQueues.newRoundMessages[recievedHash]):
+                reachedThreshold = True
+
+        if reachedThreshold:
             print("Clearing House")
-            del MessageQueues.PendingBlockDict[recievedHash]
-            del MessageQueues.validationVotes[recievedHash]
-            del MessageQueues.commitMessages[recievedHash]
-            del MessageQueues.newRoundMessages[recievedHash]
+            if recievedHash in MessageQueues.PendingBlockDict:
+                del MessageQueues.PendingBlockDict[recievedHash]
+            if recievedHash in MessageQueues.validationVotes:
+                del MessageQueues.validationVotes[recievedHash]
+            if recievedHash in MessageQueues.commitMessages:
+                del MessageQueues.commitMessages[recievedHash]
+            if recievedHash in MessageQueues.newRoundMessages:
+                del MessageQueues.newRoundMessages[recievedHash]
             MessageQueues.transactionQueue = {}
 
             return jsonify({"response": "Cleared Queues"})
@@ -290,9 +359,17 @@ def NewRound():
     return jsonify({"response": "voting on a non-existent block"})
 
 
+"""
+    {
+                    "lastHash": lastHash,
+                    "sender": keySerialization.serializePublicKey(self.publicKey),
+                    "signature": signature
+                }
+    """
 
-@app.route("/SendNewBlockChain", methods=['POST'])
-def CheckBlockChain():
+
+@app.route("/MissingBlockRequeset", methods=['POST'])
+def MissingBlockRequeset():
 
     jsn = request.get_json()
 
@@ -300,12 +377,46 @@ def CheckBlockChain():
 
     signature = jsn['signature']
 
+    lastHash = jsn['lastHash']
+
+    missingBlocks = []
+
+    try:
+        Signing.verifyingTheSignature(keySerialization.deserializePublicKey(proposer), signature, lastHash)
+    except:
+        return json.dumps({"response": "KeyError"})
+
+    for i in range(-1, len(PBFTNode.node.blockChain.chain)-1 ,-1):
+        currentHash = PBFTNode.node.blockChain.chain[i].getHash()
+        if currentHash != lastHash:
+            missingBlocks.append(PBFTNode.node.blockChain.chain[i])
+
+    return json.dumps({"response":{"missingBlocks":missingBlocks}})
+
+
+@app.route("/SendNewBlockChain", methods=['POST'])
+def SendNewBlockChain():
+
+    jsn = request.get_json()
+
+    proposer = jsn['sender']
+
+    signature = jsn['signature']
+
+    print({"remoteIP": request.remote_addr})
+
+    if request.remote_addr in PBFTNode.node.peers:
+        return json.dumps({"response":"already synced BLKCHN with node"})
+    
+
+    MessageQueues.blockChainParent = proposer
+
     recievedHash = jsn['blockChainHash']
 
     blockchainString = jsn['blockChain']
 
     if keySerialization.serializePublicKey(PBFTNode.node.publicKey) == proposer:
-        return json.dumps({"response": "Wont Count Own Vote"})
+        return json.dumps({"response": "Will "})
 
     try:
         Signing.verifyingTheSignature(keySerialization.deserializePublicKey(proposer), signature, recievedHash)
@@ -317,7 +428,34 @@ def CheckBlockChain():
     return json.dumps({"response":"thankyoufor the blockchain"})
 
 
+@app.route("/AddNewBlockForSingularNode", methods=['POST'])
+def AddNewBlockForSingularNode():
+    jsn = request.get_json()
+
+    proposer = jsn['sender']
+
+    signature = jsn['signature']
+
+    data = jsn["salt"]
+
     
+
+    try:
+        Signing.verifyingTheSignature(keySerialization.deserializePublicKey(proposer), signature, data)
+    except:
+        return json.dumps({"response": "KeyError"})
+
+    block = createBlock()
+
+    PBFTNode.node.blockChain.add_block(block)
+
+    MessageQueues.transactionQueue = {}
+
+    print({"BlockChainLength": len(PBFTNode.node.blockChain.chain)})
+
+    print({"transactionLength For Latest block": len(PBFTNode.node.blockChain.chain[-1].transactions)})
+
+    return jsonify({"response": "Added block to chain"})
 
 
 
