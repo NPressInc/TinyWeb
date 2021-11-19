@@ -39,7 +39,7 @@ class TinyWebClient:
 
         FauxTransactionList = []
 
-        for i in range(0,10000):
+        for i in range(0,1000):
             transaction1 = {"messageType": "SMS","sender": senderPublicKeyString, "receiver":recipientKeyString, "context":message1, "dateTime": time.time() + i}
             transaction2 = {"messageType": "SMS","sender": senderPublicKeyString, "receiver":recipientKeyString, "context":message2, "dateTime": time.time() + i}
             signature1 = Signing.normalSigning(self.__privateKey, Serialization.hashObject(transaction1))
@@ -50,7 +50,7 @@ class TinyWebClient:
         
         counter = 0
         numberOfMessages = 200
-        secondsBetweenMessages = 1
+        secondsBetweenMessages = 2
 
         while counter < numberOfMessages:
             counter += 1
@@ -61,6 +61,7 @@ class TinyWebClient:
     @staticmethod
     def sendTransaction(transactionObject):
         import requests
+        print("about to send transaction")
         url = "http://127.0.0.1:"+ str(5000 + nodeId) +"/Transaction"
         data = Serialization.serializeObjToJson(transactionObject)
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
