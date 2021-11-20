@@ -58,8 +58,8 @@ class PBFTNode:
                     newPeers = []
                     for peer in newPeerList:
                         if not(peer in node.peers):
-                            if peer != "http://127.0.0.1:" + str(5000 + nodeId) +"/": # make sure that the new peer is not itself
-                                newPeers.append(peer)
+                            #if peer != "http://127.0.0.1:" + str(5000 + nodeId) +"/": # make sure that the new peer is not itself
+                            newPeers.append(peer)
 
                     if len(newPeers) != 0:  
                         node.peers = node.peers + newPeers
@@ -70,6 +70,8 @@ class PBFTNode:
                 elif len(node.peers) == 0:
                     print("Creating Block For Self")
                     node.SendBlockCreationSignalForSingularNode()
+
+                #PBFTNode.node.requestMissingBlocks()
 
             time.sleep(1)
             counter += 1
@@ -137,13 +139,12 @@ class PBFTNode:
 
                     missingBlocks = data['response']['missingBlocks']
 
-                    print({"missing Blocks Found":missingBlocks})
+                    print({"# of missing Blocks Found":len(missingBlocks)})
 
                     if len(missingBlocks) > 0:
                         successfulRequest = True
-                        for i in range(-1,len(missingBlocks)-1, -1):
-                            PBFTNode.node.blockChain.add_block(missingBlocks[i])
-
+                        for i in range(len(missingBlocks)-1, -1, -1):
+                            PBFTNode.node.blockChain.add_block( Block.deserializeJSON( missingBlocks[i]))
 
                     print({"missingBlockResp":data})
                 else:
@@ -186,8 +187,11 @@ class PBFTNode:
     def reBroadcastMessage(self, data, route):
         from threading import Thread
         #print("rebroadcasting Message " + route)
-        for peer in self.peers:
-            self.reBroadcastSingleMessage(peer,data, route)
+        if route == "Transaction":
+            for peer in self.peers:
+                self.reBroadcastSingleMessage(peer,data, route)
+        else:
+            print("Rebroadcasting Disabled")
         #print("Done ReBroadcasting " + route)
 
     def reBroadcastSingleMessage(self, peer,data, route):
@@ -280,17 +284,18 @@ class PBFTNode:
                 
         print("Done Broadcasting new blockchain")
 
-    def broadcastVerificationVotesToPeers(self, blockHash):
+    def broadcastVerificationVotesToPeers(self, blockHash, blockString):
         for peer in self.peers:
-            self.broadcastVerificationVoteToSinglePeer(peer, blockHash=blockHash)
+            self.broadcastVerificationVoteToSinglePeer(peer, blockHash, blockString)
             
 
-    def broadcastVerificationVoteToSinglePeer(self, peer,blockHash):
+    def broadcastVerificationVoteToSinglePeer(self, peer,blockHash, blockString):
         try:
             print("Broadcasting Verification Vote to: " + peer)
             url = peer + "VerificationVote"
             signature = Signing.normalSigning(self.__privateKey, blockHash)
             data = {
+                "blockData":blockString,
                 "sender": keySerialization.serializePublicKey(self.publicKey),
                 "signature": signature,
                 "blockHash": blockHash
@@ -306,17 +311,18 @@ class PBFTNode:
         except:
             print("line 307: Node not found at: " + peer)
         
-    def broadcastCommitVotesToPeers(self, blockHash):
+    def broadcastCommitVotesToPeers(self, blockHash, blockString):
         import requests
         for peer in self.peers:
-            self.broadcastCommitVoteToSinglePeer(peer, blockHash)
+            self.broadcastCommitVoteToSinglePeer(peer, blockHash, blockString)
             
-    def broadcastCommitVoteToSinglePeer(self, peer,blockHash):
+    def broadcastCommitVoteToSinglePeer(self, peer,blockHash, blockString):
         try:
             print("Broadcasting Commit Vote to: " + peer)
             url = peer + "CommitVote"
             signature = Signing.normalSigning(self.__privateKey, blockHash)
             data = {
+                "blockData":blockString,
                 "sender": keySerialization.serializePublicKey(self.publicKey),
                 "signature": signature,
                 "blockHash": blockHash
@@ -332,18 +338,19 @@ class PBFTNode:
         except:
             print("line 333: Node not found at: " + peer)
         
-    def broadcastNewRoundVotesToPeers(self, blockHash):
+    def broadcastNewRoundVotesToPeers(self, blockHash, blockString):
         import requests
         for peer in self.peers:
-            self.broadcastNewRoundVoteToSinglePeer(peer, blockHash)
+            self.broadcastNewRoundVoteToSinglePeer(peer, blockHash, blockString)
             
 
-    def broadcastNewRoundVoteToSinglePeer(self,peer, blockHash):
+    def broadcastNewRoundVoteToSinglePeer(self,peer, blockHash, blockString):
         try:
             print("Broadcasting New Round Vote to: " + peer)
             url = peer + "NewRound"
             signature = Signing.normalSigning(self.__privateKey, blockHash)
             data = {
+                "blockData": blockString,
                 "sender": keySerialization.serializePublicKey(self.publicKey),
                 "signature": signature,
                 "blockHash": blockHash
@@ -367,7 +374,7 @@ class PBFTNode:
         if len(self.peers) < 1 or self.blockChain.chain[-1].proposerId == -1:
             return 0
 
-        index = (self.blockChain.chain[-1].proposerId + 1) % (NumberOfPeers + 1)
+        index = (self.blockChain.chain[-1].proposerId + 1) % (NumberOfPeers)
         return index
 
     @staticmethod
