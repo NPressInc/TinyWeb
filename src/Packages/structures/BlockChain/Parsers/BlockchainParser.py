@@ -3,6 +3,12 @@ import json
 
 from .BlockParser import BlockParser
 
+
+import sys
+nodeId = 0
+if len(sys.argv) > 2:
+    nodeId = int(sys.argv[2])
+
 class BlockchainParser:
 
     @staticmethod
@@ -11,8 +17,8 @@ class BlockchainParser:
             peerlist = BlockParser.findPeerList(blockchain.chain[i])
             if peerlist != None:
                 return peerlist['peers']
+        #if nothing found in the blockchain, the peer is just itself
         return None
-
 
     """
 

@@ -12,21 +12,21 @@ class BlockChainReadWrite:
         f.write("this is a blockchain")
         f.close()
 
-    def saveBlockChainToFile(blockChain: BlockChain):
+    def saveBlockChainToFile(blockChain: BlockChain, nodeId):
         jsonString = blockChain.serializeJSON()
 
         compressedBytes = brotli.compress(str.encode(jsonString))
 
 
-        f = open("State/currentBlockChain.dat","wb")
+        f = open("State/currentBlockChain" + str(nodeId)+".dat","wb")
         f.write(compressedBytes)
         f.close()
         print("Saved BlockChain To File!")
     
-    def readBlockChainFromFile():
+    def readBlockChainFromFile(nodeId):
 
         try:
-            f = open("State/currentBlockChain.dat","rb")
+            f = open("State/currentBlockChain"+str(nodeId)+".dat","rb")
 
             CompressedBlockChainBytes = f.read()
 

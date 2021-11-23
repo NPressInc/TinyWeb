@@ -18,7 +18,7 @@ class blockChainInitialization:
 
         daddyClient = TinyWebClient.initializeClient("1")
 
-        peerDefTransaction = blockChainInitialization.initializePeerListForTesting(daddyClient, 6)
+        peerDefTransaction = blockChainInitialization.initializePeerListForTesting(daddyClient, 4)
 
         transactions.append(peerDefTransaction)
 

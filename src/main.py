@@ -36,7 +36,6 @@ exit()
 """
 
 
-
 def runNodeFlask():
     from waitress import serve
     app.run(debug=False, port=5000 + nodeId)
