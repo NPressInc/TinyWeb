@@ -45,6 +45,7 @@ class MessageQueues:
     validationVotes = {}
     commitMessages = {}
     newRoundMessages = {}
+    missingProposerVotes = {}
     transactionQueueLimit = 3
     blockChainParent = ""
     
@@ -208,7 +209,7 @@ def VerificationVote():
         MessageQueues.validationVotes[recievedHash].append(proposer)
 
         PBFTNode.node.reBroadcastMessage(Serialization.serializeObjToJson(jsn), "VerificationVote")
-        time.sleep(1)
+        #time.sleep(1)
 
         reachedThreshold = False
 
@@ -297,12 +298,12 @@ def CommitVote():
 
             #print({"Proposed Block previous hash":block.previous_hash})
 
-            print({"Proposed Block blockchais last Hashes":PBFTNode.node.blockChain.last_block().getHash()})
+            #print({"Proposed Block blockchais last Hashes":PBFTNode.node.blockChain.last_block().getHash()})
 
             #print("about to send newRound")
 
             if block.getHash() == PBFTNode.node.blockChain.last_block().getHash():
-                print("Block Already Commited to chain")
+                #print("Block Already Commited to chain")
                 MessageQueues.CommitedBlockDict[blockHash] = blockHash
                 PBFTNode.node.broadcastNewRoundVotesToPeers(recievedHash, blockString)
                 return jsonify({"response": "Block Already Commited to chain"})
@@ -316,6 +317,8 @@ def CommitVote():
                 block.previous_hash = PBFTNode.node.blockChain.last_block().getHash()
 
                 #PBFTNode.node.requestMissingBlocks()
+
+                PBFTNode.node.proposerOffset = 0
 
                 PBFTNode.node.blockChain.add_block(block)
 
@@ -366,7 +369,7 @@ def NewRound():
         MessageQueues.newRoundMessages[recievedHash].append(proposer)
 
         PBFTNode.node.reBroadcastMessage(Serialization.serializeObjToJson(jsn), "NewRound")
-        time.sleep(1)
+        #time.sleep(1)
 
         reachedThreshold = False        
 
@@ -397,7 +400,7 @@ def NewRound():
                 print({"Block Committed, BlockChainLength": len(PBFTNode.node.blockChain.chain)})
 
 
-            print("Clearing House")
+            #print("Clearing House")
             if recievedHash in MessageQueues.validationVotes:
                 del MessageQueues.validationVotes[recievedHash]
             if recievedHash in MessageQueues.commitMessages:
@@ -421,6 +424,64 @@ def NewRound():
                 }
     """
 
+"""
+
+
+@app.route("/MissingProposer", methods=['POST'])
+def MissingProposer():
+    
+    jsn = request.get_json()
+
+    proposer = jsn['sender']
+
+    signature = jsn['signature']
+
+    proposerId = jsn['proposerId']
+
+
+
+    if proposerId in MessageQueues.missingProposerVotes:
+        if MessageQueues.missingProposerVotes[proposerId] == proposer:
+            return json.dumps({"response": "Vote Already Counted"})
+
+    try:
+        Signing.verifyingTheSignature(keySerialization.deserializePublicKey(proposer), signature, proposerId)
+    except:
+        return json.dumps({"response": "KeyError"})
+
+    if not(proposerId in MessageQueues.missingProposerVotes):
+        MessageQueues.missingProposerVotes[proposerId] = []
+
+
+    MessageQueues.missingProposerVotes[proposerId].append(proposer)
+
+    PBFTNode.node.reBroadcastMessage(Serialization.serializeObjToJson(jsn), "VerificationVote")
+
+    reachedThreshold = False
+
+    #if len(PBFTNode.node.peers) == 1 or len(PBFTNode.node.peers) == 1:
+        #if recievedHash in MessageQueues.validationVotes and len(MessageQueues.validationVotes[recievedHash]) == len(PBFTNode.node.peers)+1:
+            #reachedThreshold = True
+    
+    #elif len(PBFTNode.node.peers) >= 2:
+
+    minApprovals = int(2 * (len(PBFTNode.node.peers) / 3) + 1)
+    #print({"min approvals": minApprovals})
+
+    if len(MessageQueues.missingProposerVotes[proposerId]) >= minApprovals:
+        reachedThreshold = True
+
+    if reachedThreshold:
+        print("Adding to Proposer Offset")
+        MessageQueues.missingProposerVotes[proposerId] = []
+        PBFTNode.node.proposerOffset += 1
+
+        return jsonify({"response": "Broadcasted Commit"})
+    
+    return jsonify({"response": "Recieved verification but didnt hit threshold"})
+
+
+"""
 
 @app.route("/BlockChainLastHash")
 def BlockChainLastHash():

@@ -76,11 +76,11 @@ class PBFTNode:
 
             blockChainHasProgressed = PBFTNode.node.blockChain.length != blockChainLength
 
-            if counter % 15 == 0:
+            if counter % 3 == 0:
                 
-                print({"blockChainHasProgressed": blockChainHasProgressed})
+                #print({"blockChainHasProgressed": blockChainHasProgressed})
                 newPeerList = BlockchainParser.getMostRecentPeerList(node.blockChain)
-                print({"new Peer List, nodee":newPeerList})
+                #print({"new Peer List, nodee":newPeerList})
                 if newPeerList != None:
                     newPeers = []
                     for peer in newPeerList:
@@ -91,38 +91,47 @@ class PBFTNode:
                         node.peers = node.peers + newPeers # adds new peers list to node.peers
                         for peer in newPeers:
                             node.broadcastBlockChainToNewNode(peer)
-                    else:
-                        print("peers havent Changed")
+                    
                 elif len(node.peers) == 0:
                     print("Creating Block For Self")
                     node.SendBlockCreationSignalForSingularNode()
 
-                print({"peers": PBFTNode.node.peers})
+                #print({"peers": PBFTNode.node.peers})
                 print({"proposerId": PBFTNode.node.calculateProposerId()})
-                if not blockChainHasProgressed:
-                    blockChainLength = PBFTNode.node.blockChain.length
-                    if PBFTNode.node.calculateProposerId() == PBFTNode.node.id:
-                        print("Node script Proposing Block Because of lack of traffic")
-                        currentBlock = PBFTNode.node.createBlock("http://127.0.0.1:" + str(5000 + nodeId) + "/")
 
-                        BlockVerification.VerifyBlock(currentBlock)
 
-                        blockHash = currentBlock.getHash()
+                blockChainLength = PBFTNode.node.blockChain.length
+                if (not blockChainHasProgressed) and PBFTNode.node.calculateProposerId() == PBFTNode.node.id:
+                    print("Proposing Block")
+                    currentBlock = PBFTNode.node.createBlock("http://127.0.0.1:" + str(5000 + nodeId) + "/")
 
-                        if currentBlock.previous_hash != PBFTNode.node.blockChain.last_block().getHash():
-                                raise Exception({"in Transaction, sync error detected":"Chains Out of sync while proposing block"})
+                    BlockVerification.VerifyBlock(currentBlock)
 
-                        #print({"Proposed Block previous hash":currentBlock.previous_hash})
+                    blockHash = currentBlock.getHash()
 
-                        #print({"Proposed Block blockchais Hashes":PBFTNode.node.blockChain.getListOfBlockHashes()})
+                    if currentBlock.previous_hash != PBFTNode.node.blockChain.last_block().getHash():
+                            raise Exception({"in Transaction, sync error detected":"Chains Out of sync while proposing block"})
 
-                        PBFTNode.node.broadcastBlockToPeers(currentBlock, blockHash)
+                    #print({"Proposed Block previous hash":currentBlock.previous_hash})
+
+                    #print({"Proposed Block blockchais Hashes":PBFTNode.node.blockChain.getListOfBlockHashes()})
+
+                    PBFTNode.node.broadcastBlockToPeers(currentBlock, blockHash)
                     
 
-            if counter % 30 == 0:
+            if counter % 21 == 0:
+                
                 blockChainLength = PBFTNode.node.blockChain.length
                 if (not blockChainHasProgressed) and len(PBFTNode.node.peers) != 0:
-                    PBFTNode.node.resyncWithLongestBlockChain()
+                    syncRes = PBFTNode.node.resyncWithLongestBlockChain()
+                    proposerId = PBFTNode.node.calculateProposerId()
+                    print({"sync Res":syncRes})
+                    print({"proposerId": proposerId})
+                    if syncRes < 0 and PBFTNode.node.id != proposerId:
+                        PBFTNode.node.proposerOffset += 1
+                        print({"proposerOffset":PBFTNode.node.proposerOffset})
+
+
 
 
 
@@ -154,7 +163,7 @@ class PBFTNode:
 
         self.blockChain = blockChain
 
-        self.phase = 0
+        self.proposerOffset = 0
 
         self.initializeKeys()
 
@@ -172,6 +181,30 @@ class PBFTNode:
 
         return client
 
+    def voteForMissingProposer(self, proposerId):
+        signature = Signing.normalSigning(self.__privateKey, str(proposerId))
+        data = {
+            "proposerId": str(proposerId),
+            "sender": keySerialization.serializePublicKey(self.publicKey),
+            "signature":signature
+        }
+        data = Serialization.serializeObjToJson(data)
+        print({"missingProposerData":data})
+        headers = {'Content-type': 'application/json',
+                'Accept': 'text/plain'}
+
+        for peer in self.peers:
+            url = peer + "MissingProposer"
+            try:
+                r = requests.post(url, data= data, headers=headers)
+                if r.status_code == requests.codes.ok:
+                    data = Serialization.deserializeObjFromJsonR(r.text)
+                    print(data)
+
+            except:
+                print("maybe it was the proposer?")
+            
+                
 
     def getLastBlockHashFromPeers(self):
         import requests
@@ -198,11 +231,12 @@ class PBFTNode:
         return maxHash
 
     def resyncWithLongestBlockChain(self):
+        print("Resyncing blockchains")
         longestChain = 0
         peerWithLongestBlockChain = self.peers[0]
         for peer in self.peers:
             if peer != "http://127.0.0.1:" + str(5000 + nodeId) + "/":
-                print("get all the lengths of the blockchains and select the longest one to query")
+                #print("get all the lengths of the blockchains and select the longest one to query")
                 peerChainLength = self.getBlockChainLengthOfPeer(peer)
                 if  peerChainLength > longestChain:
                     peerWithLongestBlockChain = peer
@@ -210,6 +244,9 @@ class PBFTNode:
         
         if longestChain > self.blockChain.length:
             self.requestMissingBlocksFromPeer(peerWithLongestBlockChain)
+            return 0
+        else:
+            return -1 # returns -1 if chains are in sync and still no new blocks are proposed
 
     def getPendingTransactions(self, peer):
         url = peer + "GetPendingTransactions"
@@ -283,27 +320,31 @@ class PBFTNode:
         data = Serialization.serializeObjToJson(data)
         headers = {'Content-type': 'application/json',
                 'Accept': 'text/plain'}
+
+        try:
+            r = requests.post(url, data= data, headers=headers)
+
+            if r.status_code == requests.codes.ok:
+
+                data = Serialization.deserializeObjFromJsonR(r.text)
+
+                missingBlocks = data['response']['missingBlocks']
+
+                print({"# of missing Blocks Found":len(missingBlocks)})
+
+                if len(missingBlocks) > 0:
+                    for i in range(len(missingBlocks)-1, -1, -1):
+                        if BlockVerification.VerifyBlock(missingBlocks[i]) == True:
+                            PBFTNode.node.blockChain.add_block( Block.deserializeJSON(missingBlocks[i]))
+                        else: 
+                            raise Exception("Resync of blockchain failed becuase of invalid block")
+            else:
+                return None
+
+        except:
+            print({"Missing Peer in block Request"})
         
-        r = requests.post(url, data= data, headers=headers)
-
-        if r.status_code == requests.codes.ok:
-
-            data = Serialization.deserializeObjFromJsonR(r.text)
-
-            missingBlocks = data['response']['missingBlocks']
-
-            print({"# of missing Blocks Found":len(missingBlocks)})
-
-            if len(missingBlocks) > 0:
-                for i in range(len(missingBlocks)-1, -1, -1):
-                    if BlockVerification.VerifyBlock(missingBlocks[i]) == True:
-                        PBFTNode.node.blockChain.add_block( Block.deserializeJSON(missingBlocks[i]))
-                    else: 
-                        raise Exception("Resync of blockchain failed becuase of invalid block")
-
-            print({"missingBlockResp":data})
-        else:
-            return None
+        
                 
 
                 
@@ -357,17 +398,8 @@ class PBFTNode:
             url = peer + route
             headers = {'Content-type': 'application/json',
                     'Accept': 'text/plain'}
-            r = requests.post(url, data= data, headers=headers)
-            if r.status_code == requests.codes.ok:
+            Thread(target=post, args=(url,), kwargs={"json": json.loads(data)}).start()
 
-                data = Serialization.deserializeObjFromJsonR(r.text)
-
-                #print({"Re Broadcast " + route:data})
-            else:
-                return None
-
-
-            #Thread(target=post, args=(url,), kwargs={"json": json.loads(data)}).start()
         except:
             print("line 213: Node not found at: " + peer)
 
@@ -400,7 +432,7 @@ class PBFTNode:
 
                 data = Serialization.deserializeObjFromJsonR(r.text)
 
-                print({"Broadcast Single Block":data})
+                #print({"Broadcast Single Block":data})
             else:
                 return None
         except:
@@ -462,7 +494,7 @@ class PBFTNode:
             if r.status_code == requests.codes.ok:
 
                 data = Serialization.deserializeObjFromJsonR(r.text)
-                print({"Verifiaction vote resp":data})
+                #print({"Verifiaction vote resp":data})
         except:
             print("line 307: Node not found at: " + peer)
         
@@ -489,7 +521,7 @@ class PBFTNode:
             if r.status_code == requests.codes.ok:
 
                 data = Serialization.deserializeObjFromJsonR(r.text)
-                print({"Commit vote resp":data})
+                #print({"Commit vote resp":data})
         except:
             print("line 333: Node not found at: " + peer)
         
@@ -517,7 +549,7 @@ class PBFTNode:
             if r.status_code == requests.codes.ok:
 
                 data = Serialization.deserializeObjFromJsonR(r.text)
-                print({"New Round vote resp":data})
+                #print({"New Round vote resp":data})
         except:
             print("line 360: Node not found at: " + peer)
         
@@ -529,8 +561,8 @@ class PBFTNode:
         if len(self.peers) < 1 or self.blockChain.chain[-1].proposerId == -1:
             return 0
 
-        index = (self.blockChain.chain[-1].proposerId + 1) % (NumberOfPeers)
-        return index
+        index = (self.blockChain.chain[-1].proposerId + 1 + self.proposerOffset) % (NumberOfPeers)
+        return index 
 
     @staticmethod
     def compressJson(input):
