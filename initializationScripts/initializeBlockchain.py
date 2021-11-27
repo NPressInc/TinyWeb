@@ -18,12 +18,14 @@ class blockChainInitialization:
 
         daddyClient = TinyWebClient.initializeClient("1")
 
-        peerDefTransaction = blockChainInitialization.initializePeerListForTesting(daddyClient, 4)
+        numberOfNodes = 4
+
+        peerDefTransaction = blockChainInitialization.initializePeerListForTesting(daddyClient, numberOfNodes)
 
         transactions.append(peerDefTransaction)
 
         for ts in transactions:
-            for i in range(0,1):
+            for i in range(numberOfNodes):
                 blockChainInitialization.sendTransaction(ts, i)
 
 

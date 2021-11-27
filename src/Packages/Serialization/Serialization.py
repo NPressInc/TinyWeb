@@ -25,6 +25,10 @@ class Serialization:
         return hashlib.sha256(objString.encode()).hexdigest()
 
     @staticmethod
+    def hashString(strToHash):
+        return hashlib.sha256(strToHash.encode()).hexdigest()
+
+    @staticmethod
     def compressJsonString(input):
         return brotli.compress(input)
 

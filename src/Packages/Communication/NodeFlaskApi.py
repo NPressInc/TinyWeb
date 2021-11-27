@@ -152,6 +152,10 @@ def NewBlock():
     blockHash = block.getHash()
 
 
+    if not(proposer in PBFTNode.node.PKeyIdDict):
+        PBFTNode.node.PKeyIdDict[proposer] = block.proposerId
+
+
     if recievedHash == blockHash and BlockVerification.VerifyBlock(block):
         import random
         random.shuffle(PBFTNode.node.peers)
@@ -193,6 +197,7 @@ def VerificationVote():
     block = Block.deserializeJSON(blockString)
     blockHash = block.getHash()
 
+
     if recievedHash == blockHash:
         if recievedHash in MessageQueues.validationVotes:
             if proposer in MessageQueues.validationVotes[recievedHash]:
@@ -219,7 +224,19 @@ def VerificationVote():
         
         #elif len(PBFTNode.node.peers) >= 2:
 
-        minApprovals = int(2 * (len(PBFTNode.node.peers) / 3) + 1)
+        activePeers = 0
+
+        for peer in PBFTNode.node.peers:
+            if not(peer in PBFTNode.node.delinquentPeers):
+                activePeers += 1
+            elif PBFTNode.node.delinquentPeers[peer] < 5:
+                activePeers += 1
+            
+
+        minApprovals = int(2 * (activePeers / 3) + 1)
+
+        print({"active Peers":activePeers})
+
         #print({"min approvals": minApprovals})
         if recievedHash in MessageQueues.validationVotes:
             if len(MessageQueues.validationVotes[recievedHash]) >= minApprovals:
@@ -286,7 +303,18 @@ def CommitVote():
                 #reachedThreshold = True
             
         #elif len(PBFTNode.node.peers) >= 2:
-        minApprovals = int(2 * (len(PBFTNode.node.peers) / 3) + 1)
+        activePeers = 0
+
+        for peer in PBFTNode.node.peers:
+            if not(peer in PBFTNode.node.delinquentPeers):
+                activePeers += 1
+            elif PBFTNode.node.delinquentPeers[peer] < 5:
+                activePeers += 1
+            
+
+        minApprovals = int(2 * (activePeers / 3) + 1)
+
+
         if recievedHash in MessageQueues.commitMessages:
             if len(MessageQueues.commitMessages[recievedHash]) >= minApprovals:
                 reachedThreshold = True
@@ -379,7 +407,18 @@ def NewRound():
                     #reachedThreshold = True
             
         #elif len(PBFTNode.node.peers) >= 2:
-        minApprovals = int(2 * (len(PBFTNode.node.peers) / 3) + 1)
+        activePeers = 0
+
+        for peer in PBFTNode.node.peers:
+            if not(peer in PBFTNode.node.delinquentPeers):
+                activePeers += 1
+            elif PBFTNode.node.delinquentPeers[peer] < 5:
+                activePeers += 1
+            
+
+        minApprovals = int(2 * (activePeers / 3) + 1)
+
+
         if recievedHash in MessageQueues.newRoundMessages:
             if len(MessageQueues.newRoundMessages[recievedHash]) >= minApprovals:
                 reachedThreshold = True
@@ -536,9 +575,11 @@ def MissingBlockRequeset():
     #print({"Missing Block Hashes":missingHashes})
 
     if len(missingHashes) != 0:
-        raise Exception("Blockchains shared no hashes, completely out of sync")
+        return json.dumps({"response":"Blockchains shared no hashes, completely out of sync"})
 
     return json.dumps({"response":{"missingBlocks":[]}})
+
+
 
 
 @app.route("/SendNewBlockChain", methods=['POST'])
@@ -573,6 +614,35 @@ def SendNewBlockChain():
     PBFTNode.node.blockChain = BlockChain.deserializeJSON(blockchainString)
 
     return json.dumps({"response":"thankyoufor the blockchain"})
+
+@app.route("/RequestEntireBlockchain", methods=['POST'])
+def RequestEntireBlockchain():
+
+    jsn = request.get_json()
+
+    proposer = jsn['sender']
+
+    signature = jsn['signature']
+
+    try:
+        Signing.verifyingTheSignature(keySerialization.deserializePublicKey(proposer), signature, proposer)
+    except:
+        return json.dumps({"response": "KeyError"})
+
+    blockchainString = PBFTNode.node.blockChain.serializeJSON()
+
+    blockChainHash = Serialization.hashString(blockchainString)
+
+    signature = PBFTNode.node.signData(blockChainHash)
+
+    output = {
+        "signature": signature,
+        "sender": keySerialization.serializePublicKey(PBFTNode.node.publicKey),
+        "blockChain": blockchainString,
+        "blockChainHash": blockChainHash
+    }
+
+    return json.dumps(output)
 
 
 @app.route("/AddNewBlockForSingularNode", methods=['POST'])

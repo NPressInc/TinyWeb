@@ -38,7 +38,7 @@ exit()
 
 def runNodeFlask():
     from waitress import serve
-    app.run(debug=False, port=5000 + nodeId)
+    #app.run(debug=False, port=5000 + nodeId)
     serve(app, host="127.0.0.1", port=(5000 + nodeId))
 
 def runBlockChainApiFlask():
