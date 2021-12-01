@@ -16,7 +16,7 @@ class BlockchainParser:
         for i in range(len(blockchain.chain)-1, -1, -1):
             peerlist = BlockParser.findPeerList(blockchain.chain[i])
             if peerlist != None:
-                return peerlist['peers']
+                return peerlist
         #if nothing found in the blockchain, the peer is just itself
         return None
 

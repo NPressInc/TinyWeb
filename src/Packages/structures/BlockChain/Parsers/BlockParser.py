@@ -6,9 +6,11 @@ class BlockParser:
     @staticmethod
     def findPeerList(block):
         peersTransaction = None
-        for tr in block.transactions:
+        for i in range(len(block.transactions)-1, -1, -1):
+            tr = block.transactions[i]
             if tr["messageType"] == "PeerList":
                 peersTransaction = tr
+                break
 
         return peersTransaction 
 
@@ -28,6 +30,7 @@ class BlockParser:
         for tr in block.transactions:
             if groupHash == Serialization.hashObject(tr):
                 group = tr
+                break
         return group   
 
     @staticmethod
@@ -46,7 +49,8 @@ class BlockParser:
 
         messages = []
 
-        for tr in block.transactions:
+        for i in range(len(block.transactions)-1, -1, -1):
+            tr = block.transactions[i]
             if tr["messageType"] == "SMS":
                 if PublicKeyString == tr["receiver"]:
                     messages.append(tr)

@@ -8,6 +8,8 @@ from Packages.Serialization.Serialization import Serialization
 
 import requests
 
+from Packages.Verification.Signing import Signing
+
 
 
 class blockChainInitialization:
@@ -18,7 +20,7 @@ class blockChainInitialization:
 
         daddyClient = TinyWebClient.initializeClient("1")
 
-        numberOfNodes = 4
+        numberOfNodes = 2
 
         peerDefTransaction = blockChainInitialization.initializePeerListForTesting(daddyClient, numberOfNodes)
 
@@ -36,6 +38,8 @@ class blockChainInitialization:
         data = Serialization.serializeObjToJson(transactionObject)
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         r = requests.post(url, data=data, headers=headers)
+        if r.status_code == requests.codes.ok:
+            print({"response from entire blockchain request": r.text})
         print("sent Transaction")
 
 
@@ -43,14 +47,26 @@ class blockChainInitialization:
     @staticmethod   
     def initializePeerListForTesting(daddyClient, numberOfPeers):
         peerList = []
+        publicKeyList = []
+        idList = []
         for i in range(0, numberOfPeers):
             peerList.append("http://127.0.0.1:" + str(5000 + i) +"/")
+            privateKey = Signing.PrivateKeyMethods.loadPrivateKeyNode(i)
+
+            print({"The private key":keySerialization.serializePrivateKey(privateKey)})
+            publickey = privateKey.public_key()
+            publicKeyList.append(keySerialization.serializePublicKey(publickey))
+
+            print("For node: " + str(i) + " the public key is: " + keySerialization.serializePublicKey(publickey))
+            idList.append(i)
 
         publicKeyString = keySerialization.serializePublicKey(daddyClient.publicKey)
 
         transaction = {
             "messageType": "PeerList",
             "peers": peerList,
+            "publicKeys": publicKeyList,
+            "ids": idList,
             "sender": publicKeyString
         }
 

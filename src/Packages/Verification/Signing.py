@@ -32,6 +32,7 @@ class Signing:
 
         @staticmethod
         def savePrivateKeyNode(privateKey: ec.EllipticCurvePrivateKey, nodeId):
+            return ""
             PKBytes = privateKey.private_bytes(
                 encoding = serialization.Encoding.PEM, 
                 format=serialization.PrivateFormat.PKCS8, 
@@ -52,7 +53,9 @@ class Signing:
 
         @staticmethod
         def loadPrivateKeyNode(nodeId):
-            with open("State/private_keyNode" + str(nodeId) + ".pem", "rb") as key_file:
+            path = "State/private_keyNode" + str(nodeId) + ".pem"
+            print({"filePath": path})
+            with open(path, "rb") as key_file:
                 private_key = serialization.load_pem_private_key(
                     key_file.read(),
                     password=None,

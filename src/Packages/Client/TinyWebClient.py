@@ -50,7 +50,7 @@ class TinyWebClient:
         
         counter = 0
         numberOfMessages = 200
-        secondsBetweenMessages = 2
+        secondsBetweenMessages = 0.5
 
         while counter < numberOfMessages:
             counter += 1

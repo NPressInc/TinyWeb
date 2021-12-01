@@ -27,7 +27,7 @@ class Signing:
                 format=serialization.PrivateFormat.PKCS8, 
                 encryption_algorithm = serialization.NoEncryption()
                 )
-            with open("State/private_keyClient" + str(clientId) + ".pem", 'wb') as f:
+            with open("../src/State/private_keyClient" + str(clientId) + ".pem", 'wb') as f:
                 f.write(PKBytes)
 
         @staticmethod
@@ -37,12 +37,12 @@ class Signing:
                 format=serialization.PrivateFormat.PKCS8, 
                 encryption_algorithm = serialization.NoEncryption()
                 )
-            with open("State/private_keyNode" + str(nodeId) + ".pem", 'wb') as f:
+            with open("../src/State/private_keyNode" + str(nodeId) + ".pem", 'wb') as f:
                 f.write(PKBytes)
 
         @staticmethod
         def loadPrivateKeyClient(clientId):
-            with open("State/private_keyClient" + str(clientId) + ".pem", "rb") as key_file:
+            with open("../src/State/private_keyClient" + str(clientId) + ".pem", "rb") as key_file:
                 private_key = serialization.load_pem_private_key(
                     key_file.read(),
                     password=None,
@@ -52,7 +52,9 @@ class Signing:
 
         @staticmethod
         def loadPrivateKeyNode(nodeId):
-            with open("State/private_keyNode" + str(nodeId) + ".pem", "rb") as key_file:
+            path = "../src/State/private_keyNode" + str(nodeId) + ".pem"
+            print({"filePath": path})
+            with open(path, "rb") as key_file:
                 private_key = serialization.load_pem_private_key(
                     key_file.read(),
                     password=None,

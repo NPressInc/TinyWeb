@@ -33,9 +33,7 @@ class PBFTNode:
         blockChain = BlockChainReadWrite.readBlockChainFromFile(nodeId)
 
         if blockChain == None:
-            blockChain = PBFTNode.configureBlockChainForFirstUse()
-
-        
+            blockChain = PBFTNode.configureBlockChainForFirstUse()        
 
         print({"last Block Index": blockChain.last_block().index})
 
@@ -52,12 +50,18 @@ class PBFTNode:
 
 
         newPeerList = BlockchainParser.getMostRecentPeerList(node.blockChain)
-                #print({"new Peer List, nodee":newPeerList})
+        print({"new Peer List, nodee":newPeerList})
         if newPeerList != None:
             newPeers = []
-            for peer in newPeerList:
+            for peer in newPeerList["peers"]:
                 if not(peer in node.peers):
                     newPeers.append(peer)
+            for i in range(len(newPeerList["peers"])):
+                obj = {
+                    "ip":newPeerList["peers"][i],
+                    "id":newPeerList["ids"][i]
+                }
+                PBFTNode.node.fullPeerInfo[newPeerList["publicKeys"][i]] = obj
             print("Loaded peers from blockchain")
             if len(newPeers) != 0:  
                 node.peers = node.peers + newPeers # adds new peers list to node.peers
@@ -69,7 +73,7 @@ class PBFTNode:
 
         counter = 1
 
-        while counter < 1000:
+        while True:
             #print({"check Length": blockChainLength })
             #print({"actualLength": PBFTNode.node.blockChain.length })
             #print({"blockChainHasProgressed": blockChainHasProgressed})
@@ -79,18 +83,19 @@ class PBFTNode:
             if counter % 10 == 0:
                 #print({"blockChainHasProgressed": blockChainHasProgressed})
                 newPeerList = BlockchainParser.getMostRecentPeerList(node.blockChain)
-                if len(PBFTNode.node.IdIpPeerDict) == 0 and newPeerList != None:
-                    for i in range(len(newPeerList)):
-                        PBFTNode.node.IdIpPeerDict[str(i)] = newPeerList[i]
-                
-                print(PBFTNode.node.IdIpPeerDict)
-                #print({"new Peer List, nodee":newPeerList})
+                print({"new Peer List, nodee":newPeerList})
                 if newPeerList != None:
                     newPeers = []
-                    for peer in newPeerList:
+                    for peer in newPeerList["peers"]:
                         if not(peer in node.peers):
                             newPeers.append(peer)
-
+                    for i in range(len(newPeerList["peers"])):
+                        obj = {
+                            "ip":newPeerList["peers"][i],
+                            "id":newPeerList["ids"][i]
+                        }
+                        PBFTNode.node.fullPeerInfo[newPeerList["publicKeys"][i]] = obj
+                    print("Loaded peers from blockchain")
                     if len(newPeers) != 0:  
                         node.peers = node.peers + newPeers # adds new peers list to node.peers
                         
@@ -172,6 +177,8 @@ class PBFTNode:
 
         self.peers = []
 
+        self.fullPeerInfo = {}
+
         self.delinquentPeers = {}
 
         self.IdIpPeerDict = {}
@@ -192,6 +199,7 @@ class PBFTNode:
         client = None
         try:
             privateKey = Signing.PrivateKeyMethods.loadPrivateKeyNode(self.id)
+            print({"The private key":keySerialization.serializePrivateKey(privateKey)})
             self.publicKey=Signing.PrivateKeyMethods.generatePublicKeyFromPrivate(privateKey)
             print("Loaded Client: " + self.id)
         except:
@@ -232,7 +240,16 @@ class PBFTNode:
         hashes = {}
         for peer in self.peers:
             url = peer + "BlockChainLastHash"
-            r = requests.get(url)
+            publicKeyString = keySerialization.serializePublicKey(self.publicKey)
+            signature = Signing.normalSigning(self.__privateKey, str(publicKeyString))
+            data = {
+                "sender": publicKeyString,
+                "signature":signature
+            }
+            data = Serialization.serializeObjToJson(data)
+            headers = {'Content-type': 'application/json',
+                'Accept': 'text/plain'}
+            r = requests.post(url, data= data, headers=headers)
             if r.status_code == requests.codes.ok:
                 data = Serialization.deserializeObjFromJsonR(r.text)
                 lastBlockHash = data['lastHash']
@@ -430,11 +447,10 @@ class PBFTNode:
         import requests
         try:
             url = "http://127.0.0.1:" + str(5000 + nodeId) + "/AddNewBlockForSingularNode"
-            salt = "The Packers Rule"
-            signature = Signing.normalSigning(self.__privateKey, salt)
+            publicKeyString =  keySerialization.serializePublicKey(self.publicKey)
+            signature = Signing.normalSigning(self.__privateKey, publicKeyString)
             data = {
-                "salt": salt,
-                "sender": keySerialization.serializePublicKey(self.publicKey),
+                "sender": publicKeyString,
                 "signature": signature
             }
             data = Serialization.serializeObjToJson(data)
@@ -512,7 +528,7 @@ class PBFTNode:
                     PBFTNode.node.delinquentPeers[peer] = 0
                     print({"welcome back! Id": peer})
 
-                #print({"Broadcast Single Block":data})
+                print({"Broadcast Single Block":data})
             else:
                 if peer in PBFTNode.node.delinquentPeers:
 
@@ -554,7 +570,7 @@ class PBFTNode:
 
                 data = Serialization.deserializeObjFromJsonR(r.text)
 
-                #print({"Broadcast Blockchain to new node":data})
+                print({"Broadcast Blockchain to new node":data})
             else:
                 return None
         except:
@@ -591,7 +607,7 @@ class PBFTNode:
                     PBFTNode.node.delinquentPeers[peer] = 0
                     print({"welcome back! Id": peer})
 
-                #print({"Verifiaction vote resp":data})
+                print({"Verifiaction vote resp":data})
             else:
                 if peer in PBFTNode.node.delinquentPeers:
 
