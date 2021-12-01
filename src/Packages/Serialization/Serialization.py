@@ -99,7 +99,7 @@ class Serialization:
             "name": inputData["name"],
             "type": inputData["type"],
             "scope": inputData["scope"],
-            "creator": inputData["creator"]
+            "sender": inputData["sender"]
         }
         PermissionDefString = json.dumps(groupDef, sort_keys=True)
 

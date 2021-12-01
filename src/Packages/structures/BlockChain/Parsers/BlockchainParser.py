@@ -34,7 +34,7 @@ class BlockchainParser:
             if transaction["messageType"] == "CreatorAssignment":
                 allUsers.append(transaction["creator"])
                 
-        return allUsers
+        return list(set(allUsers))
 
     """
 

@@ -81,7 +81,7 @@ class blockChainInitialization:
         return data
 
     @staticmethod
-    def createRolesDefTransactions(RoleDefinitions, permissionNameHashDict):
+    def createRolesDefTransactions(RoleDefinitions, permissionNameHashDict, creatorPK):
         roleHashDict = {}
         transactions = []
 
@@ -89,7 +89,7 @@ class blockChainInitialization:
             newRole = {
                 "messageType": "RoleDescriptor",
                 "name": RoleDef["name"],
-                "creator": "-1",
+                "sender": creatorPK,
                 "permissionHashes": RoleDef["permissionHashes"]
             }
             for i in range(len(RoleDef["permissionHashes"])):
@@ -118,19 +118,18 @@ class blockChainInitialization:
         return transactions
 
     @staticmethod
-    def createPermissionsTransactions(PermissionDefinitions):
+    def createPermissionsTransactions(PermissionDefinitions, creatorPK):
         permissionNameHashDict = {}
 
         transactions = []
 
         for Permission in PermissionDefinitions:
-
             newPermission = {
                 "messageType": "PermissionDescriptor",
                 "name": Permission["name"],
                 "type": Permission["type"],
                 "scope": Permission["scope"],
-                "creator": "-1"
+                "sender": creatorPK
             }
             hash = Serialization.hashPermissionDef(newPermission)
 
@@ -142,10 +141,10 @@ class blockChainInitialization:
 
 
     @staticmethod
-    def createGroupsTransactions(initialGroupMemebers):
+    def createGroupsTransactions(initialGroupMemebers, creatorPK):
         groupDef = {
                 "messageType": "GroupDef",
-                "creator": "-1",
+                "sender": creatorPK,
                 "groupType": "People",
                 "entities": initialGroupMemebers,
                 "description": "Initial Group"

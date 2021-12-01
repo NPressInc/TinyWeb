@@ -12,6 +12,7 @@ class BlockVerification:
     
     def VerifyTransaction(transaction):
         
+        
         print("TBI")
 
     def addressHasPermissionToContact(pubKey, Action, RecievingParty):

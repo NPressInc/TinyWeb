@@ -50,7 +50,7 @@ class PBFTNode:
 
 
         newPeerList = BlockchainParser.getMostRecentPeerList(node.blockChain)
-        print({"new Peer List, nodee":newPeerList})
+        #print({"new Peer List, nodee":newPeerList})
         if newPeerList != None:
             newPeers = []
             for peer in newPeerList["peers"]:
@@ -81,7 +81,7 @@ class PBFTNode:
             blockChainHasProgressed = PBFTNode.node.blockChain.length != blockChainLength
 
             if counter % 10 == 0:
-                print({"allUsersInBlockChain": BlockchainParser.getAllUsers(PBFTNode.node.blockChain)})
+                #print({"allUsersInBlockChain": BlockchainParser.getAllUsers(PBFTNode.node.blockChain)})
                 #print({"blockChainHasProgressed": blockChainHasProgressed})
                 newPeerList = BlockchainParser.getMostRecentPeerList(node.blockChain)
                 #print({"new Peer List, nodee":newPeerList})
@@ -200,7 +200,7 @@ class PBFTNode:
         client = None
         try:
             self.__privateKey = Signing.PrivateKeyMethods.loadPrivateKeyNode(self.id)
-            print({"The private key":keySerialization.serializePrivateKey(self.__privateKey)})
+            #print({"The private key":keySerialization.serializePrivateKey(self.__privateKey)})
             self.publicKey=Signing.PrivateKeyMethods.generatePublicKeyFromPrivate(self.__privateKey)
             print("Loaded Client: " + str(self.id))
         except:
@@ -277,6 +277,7 @@ class PBFTNode:
             if peer != "http://127.0.0.1:" + str(5000 + nodeId) + "/":
                 #print("get all the lengths of the blockchains and select the longest one to query")
                 peerChainLength = self.getBlockChainLengthOfPeer(peer)
+                print({"peerChainLength": peerChainLength})
                 if  peerChainLength > longestChain:
                     peerWithLongestBlockChain = peer
                     longestChain = peerChainLength
@@ -291,8 +292,20 @@ class PBFTNode:
 
     def getPendingTransactions(self, peer):
         url = peer + "GetPendingTransactions"
+
+        publicKeyString = keySerialization.serializePublicKey(self.publicKey)
+        signature = Signing.normalSigning(self.__privateKey, str(publicKeyString))
+        data = {
+            "sender": publicKeyString,
+            "signature":signature
+        }
         
-        r = requests.get(url)
+        headers = {'Content-type': 'application/json',
+                'Accept': 'text/plain'}
+
+        data = Serialization.serializeObjToJson(data)
+
+        r = requests.post(url, data= data, headers=headers)
 
         if r.status_code == requests.codes.ok:
 
@@ -307,22 +320,35 @@ class PBFTNode:
 
     def getBlockChainLengthOfPeer(self, peer):
 
-        try:
-            url = peer + "GetBlockChainLength"
+        #try:
+        url = peer + "GetBlockChainLength"
+    
+        publicKeyString = keySerialization.serializePublicKey(self.publicKey)
+        signature = Signing.normalSigning(self.__privateKey, str(publicKeyString))
+        data = {
+            "sender": publicKeyString,
+            "signature":signature
+        }
         
-            r = requests.get(url)
+        headers = {'Content-type': 'application/json',
+                'Accept': 'text/plain'}
 
-            if r.status_code == requests.codes.ok:
+        data = Serialization.serializeObjToJson(data)
+        
+        r = requests.post(url, data= data, headers=headers)
 
-                data = Serialization.deserializeObjFromJsonR(r.text)
+        if r.status_code == requests.codes.ok:
 
-                length = data["chainLength"]
+            data = Serialization.deserializeObjFromJsonR(r.text)
 
-                return length
-            return 0
+            length = data["chainLength"]
 
-        except:
-            return 0
+            return length
+        print(r.status_code)
+        return 0
+
+        #except:
+            #return 0
     
     def signData(self, data):
         return Signing.normalSigning(self.__privateKey, data)

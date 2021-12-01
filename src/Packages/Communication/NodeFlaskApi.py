@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify
 from os import path
 
 from Packages.Serialization.keySerialization import keySerialization
+from Packages.structures.BlockChain.Parsers.BlockchainParser import BlockchainParser
 
 
 from ..Serialization.Serialization import Serialization
@@ -62,21 +63,19 @@ def hello_world():
 def Transaction():
     jsn = request.get_json()
 
-    proposer = jsn['transaction']['sender']
-
-    #print(type(proposer))
-
-    #print(proposer)
+    sender = jsn['transaction']['sender']
 
     signature = jsn['signature']
-    
-
 
     transactionHash = Serialization.hashObject(jsn['transaction'])
-    pubKey = keySerialization.deserializePublicKey(proposer)
+    pubKey = keySerialization.deserializePublicKey(sender)
 
     if transactionHash in MessageQueues.transactionQueue:
         return json.dumps({"response": "Transaction Already Queued"})
+
+    if not(sender in BlockchainParser.getAllUsers(PBFTNode.node.blockChain)):
+        return json.dumps({"response": "User Not Verified"})
+
     try:
         Signing.verifyingTheSignature(pubKey, signature,transactionHash)
     except:
@@ -138,8 +137,8 @@ def NewBlock():
     idIpInfo = {}
 
     try:
-        print({"Proposing Block Pub Key": proposer})
-        print(PBFTNode.node.fullPeerInfo)
+        #print({"Proposing Block Pub Key": proposer})
+        #print(PBFTNode.node.fullPeerInfo)
         idIpInfo = PBFTNode.node.fullPeerInfo[proposer]
         Signing.verifyingTheSignature(keySerialization.deserializePublicKey(proposer), signature, recievedHash)
         
@@ -242,7 +241,7 @@ def VerificationVote():
         for peer in PBFTNode.node.peers:
             if not(peer in PBFTNode.node.delinquentPeers):
                 activePeers += 1
-            elif PBFTNode.node.delinquentPeers[peer] < 5:
+            elif PBFTNode.node.delinquentPeers[peer] < 15:
                 activePeers += 1
             
 
@@ -327,7 +326,7 @@ def CommitVote():
         for peer in PBFTNode.node.peers:
             if not(peer in PBFTNode.node.delinquentPeers):
                 activePeers += 1
-            elif PBFTNode.node.delinquentPeers[peer] < 5:
+            elif PBFTNode.node.delinquentPeers[peer] < 15:
                 activePeers += 1
             
 
@@ -436,7 +435,7 @@ def NewRound():
         for peer in PBFTNode.node.peers:
             if not(peer in PBFTNode.node.delinquentPeers):
                 activePeers += 1
-            elif PBFTNode.node.delinquentPeers[peer] < 5:
+            elif PBFTNode.node.delinquentPeers[peer] < 15:
                 activePeers += 1
             
 
