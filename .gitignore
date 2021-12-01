@@ -1,4 +1,5 @@
 *.PEM
+*.pem
 build
 docs/_build
 .pytest_cache
