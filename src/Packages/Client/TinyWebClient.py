@@ -8,8 +8,6 @@ from ..Verification.Signing import Signing
 
 from ..Serialization.keySerialization import keySerialization
 
-
-
 import time
 
 import sys
@@ -31,7 +29,6 @@ class TinyWebClient:
 
     def sendTestMessages(self, recipient):
         message1 = "Lets Rage"
-
         message2 = "No, lets age"
 
         senderPublicKeyString = keySerialization.serializePublicKey(self.publicKey)
@@ -113,6 +110,17 @@ class TinyWebClient:
     def deseriralizeJSON(jsonString):
         jsonDict = json.loads(jsonString)
         return TinyWebClient(**jsonDict)
+
+    def createGroup(self, groupMembers):
+        groupDef = {
+                "messageType": "GroupDef",
+                "creator": keySerialization.serializePublicKey(self.publicKey),
+                "groupType": "People",
+                "entities": groupMembers,
+                "description": "Initial Group"
+            }
+        groupHash = Serialization.hashGroupDef(groupDef)
+
 
     def getPeers(self):
         print("TBI")

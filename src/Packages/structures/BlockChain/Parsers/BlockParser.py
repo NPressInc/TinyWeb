@@ -1,7 +1,7 @@
 
 from Packages.Serialization.Serialization import Serialization
 
-
+#getAllUsers
 class BlockParser:
     @staticmethod
     def findPeerList(block):
@@ -13,6 +13,14 @@ class BlockParser:
                 break
 
         return peersTransaction 
+
+    @staticmethod
+    def getAllUsers(block):
+        users = []
+        for tr in block.transactions:
+            if tr["messageType"] == "GroupDef" and tr["groupType"] == "People":
+                users = users + tr["entities"]
+        return users  
 
     @staticmethod
     def findGroupsFromPublicKey(block, PublicKeyString):

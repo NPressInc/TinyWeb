@@ -75,17 +75,10 @@ def Transaction():
     transactionHash = Serialization.hashObject(jsn['transaction'])
     pubKey = keySerialization.deserializePublicKey(proposer)
 
-    
-
     if transactionHash in MessageQueues.transactionQueue:
         return json.dumps({"response": "Transaction Already Queued"})
-
-    idIpInfo = {}
     try:
-        
         Signing.verifyingTheSignature(pubKey, signature,transactionHash)
-        
-    
     except:
         return json.dumps({"response": "KeyError"})
 

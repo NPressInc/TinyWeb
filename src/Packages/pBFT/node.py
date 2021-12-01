@@ -81,9 +81,10 @@ class PBFTNode:
             blockChainHasProgressed = PBFTNode.node.blockChain.length != blockChainLength
 
             if counter % 10 == 0:
+                print({"allUsersInBlockChain": BlockchainParser.getAllUsers(PBFTNode.node.blockChain)})
                 #print({"blockChainHasProgressed": blockChainHasProgressed})
                 newPeerList = BlockchainParser.getMostRecentPeerList(node.blockChain)
-                print({"new Peer List, nodee":newPeerList})
+                #print({"new Peer List, nodee":newPeerList})
                 if newPeerList != None:
                     newPeers = []
                     for peer in newPeerList["peers"]:
@@ -198,10 +199,10 @@ class PBFTNode:
     def initializeKeys(self):
         client = None
         try:
-            privateKey = Signing.PrivateKeyMethods.loadPrivateKeyNode(self.id)
-            print({"The private key":keySerialization.serializePrivateKey(privateKey)})
-            self.publicKey=Signing.PrivateKeyMethods.generatePublicKeyFromPrivate(privateKey)
-            print("Loaded Client: " + self.id)
+            self.__privateKey = Signing.PrivateKeyMethods.loadPrivateKeyNode(self.id)
+            print({"The private key":keySerialization.serializePrivateKey(self.__privateKey)})
+            self.publicKey=Signing.PrivateKeyMethods.generatePublicKeyFromPrivate(self.__privateKey)
+            print("Loaded Client: " + str(self.id))
         except:
             self.__privateKey = Signing.PrivateKeyMethods.generatePrivateKey()
             self.publicKey = Signing.PrivateKeyMethods.generatePublicKeyFromPrivate(self.__privateKey)
@@ -370,9 +371,9 @@ class PBFTNode:
 
                 data = Serialization.deserializeObjFromJsonR(r.text)
 
-                print({"result from missing block request":data['response']})
+                #print({"result from missing block request":data['response']})
 
-                print(data['response'] == "Blockchains shared no hashes, completely out of sync")
+                #print(data['response'] == "Blockchains shared no hashes, completely out of sync")
 
                 if data['response'] == "Blockchains shared no hashes, completely out of sync":
                     self.requestEntireBlockChainFromPeer(peer)
@@ -417,7 +418,7 @@ class PBFTNode:
 
         if r.status_code == requests.codes.ok:
 
-            print({"response from entire blockchain request": r.text})
+            #print({"response from entire blockchain request": r.text})
 
             jsn = Serialization.deserializeObjFromJsonR(r.text)
 
@@ -445,28 +446,28 @@ class PBFTNode:
     
     def SendBlockCreationSignalForSingularNode(self):
         import requests
-        try:
-            url = "http://127.0.0.1:" + str(5000 + nodeId) + "/AddNewBlockForSingularNode"
-            publicKeyString =  keySerialization.serializePublicKey(self.publicKey)
-            signature = Signing.normalSigning(self.__privateKey, publicKeyString)
-            data = {
-                "sender": publicKeyString,
-                "signature": signature
-            }
-            data = Serialization.serializeObjToJson(data)
-            headers = {'Content-type': 'application/json',
-                    'Accept': 'text/plain'}
-            
-            r = requests.post(url, data= data, headers=headers)
-            if r.status_code == requests.codes.ok:
+        #try:
+        url = "http://127.0.0.1:" + str(5000 + nodeId) + "/AddNewBlockForSingularNode"
+        publicKeyString =  keySerialization.serializePublicKey(self.publicKey)
+        signature = Signing.normalSigning(self.__privateKey, publicKeyString)
+        data = {
+            "sender": publicKeyString,
+            "signature": signature
+        }
+        data = Serialization.serializeObjToJson(data)
+        headers = {'Content-type': 'application/json',
+                'Accept': 'text/plain'}
+        
+        r = requests.post(url, data= data, headers=headers)
+        if r.status_code == requests.codes.ok:
 
-                data = Serialization.deserializeObjFromJsonR(r.text)
+            data = Serialization.deserializeObjFromJsonR(r.text)
 
-                return data
-            else:
-                return None
-        except:
-            print("Node not found: self")
+            return data
+        else:
+            return None
+        #except:
+            #print("Node not found: self")
 
                 
         #print("Done Broadcasting new block")
@@ -528,7 +529,7 @@ class PBFTNode:
                     PBFTNode.node.delinquentPeers[peer] = 0
                     print({"welcome back! Id": peer})
 
-                print({"Broadcast Single Block":data})
+                #print({"Broadcast Single Block":data})
             else:
                 if peer in PBFTNode.node.delinquentPeers:
 
@@ -570,7 +571,7 @@ class PBFTNode:
 
                 data = Serialization.deserializeObjFromJsonR(r.text)
 
-                print({"Broadcast Blockchain to new node":data})
+                #print({"Broadcast Blockchain to new node":data})
             else:
                 return None
         except:
@@ -607,7 +608,7 @@ class PBFTNode:
                     PBFTNode.node.delinquentPeers[peer] = 0
                     print({"welcome back! Id": peer})
 
-                print({"Verifiaction vote resp":data})
+                #print({"Verifiaction vote resp":data})
             else:
                 if peer in PBFTNode.node.delinquentPeers:
 
@@ -681,9 +682,12 @@ class PBFTNode:
         
         NumberOfPeers = len(self.peers)
 
-        if len(self.peers) < 1 or self.blockChain.chain[-1].proposerId == -1:
-            return 0
+        #print({"lenPeers":len(self.peers)})
 
+        if len(self.peers) < 1 or self.blockChain.chain[-1].proposerId == -1:
+            #print("Other things are happening, weird")
+            return 0
+        #print({"proposerOffset": self.proposerOffset})
         index = (self.blockChain.chain[-1].proposerId + 1 + self.proposerOffset) % (NumberOfPeers)
         return index 
 

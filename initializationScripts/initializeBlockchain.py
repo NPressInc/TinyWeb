@@ -18,7 +18,7 @@ class blockChainInitialization:
     def sendTransactionsToBlockchain():
         transactions = []
 
-        daddyClient = TinyWebClient.initializeClient("1")
+        daddyClient = TinyWebClient.initializeClient("0")
 
         numberOfNodes = 2
 
@@ -78,8 +78,6 @@ class blockChainInitialization:
             "signature": signature,
             "transaction": transaction
         }
-
-        
         return data
 
     @staticmethod
@@ -155,7 +153,7 @@ class blockChainInitialization:
 
         groupHash = Serialization.hashGroupDef(groupDef)
 
-        return groupHash
+        return {"hash": groupHash, "groupDef": groupDef}
 
 
 

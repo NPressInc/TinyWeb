@@ -20,6 +20,22 @@ class BlockchainParser:
         #if nothing found in the blockchain, the peer is just itself
         return None
 
+
+    @staticmethod
+    def getAllUsers(blockchain):
+        allUsers = []
+        for i in range(len(blockchain.chain)):
+            usersInBlock = BlockParser.getAllUsers(blockchain.chain[i])
+            if len(usersInBlock) != 0:
+                allUsers = allUsers + usersInBlock
+
+        genesisBlock = blockchain.chain[0]
+        for transaction in genesisBlock.transactions:
+            if transaction["messageType"] == "CreatorAssignment":
+                allUsers.append(transaction["creator"])
+                
+        return allUsers
+
     """
 
     @staticmethod
