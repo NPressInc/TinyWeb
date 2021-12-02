@@ -191,7 +191,7 @@ def NewBlock():
         PBFTNode.node.PKeyIdDict[proposer] = block.proposerId
 
 
-    if recievedHash == blockHash and BlockVerification.VerifyBlock(block):
+    if recievedHash == blockHash and BlockVerification.VerifyBlock(block, PBFTNode.node):
         import random
         random.shuffle(PBFTNode.node.peers)
 

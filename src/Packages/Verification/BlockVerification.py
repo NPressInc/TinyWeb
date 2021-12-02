@@ -1,4 +1,4 @@
-from os import terminal_size
+from os import stat, terminal_size
 from cryptography.hazmat.primitives.asymmetric import utils
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec
@@ -15,12 +15,38 @@ class BlockVerification:
     roleHeirarchy = {"SubMemberRole": 0, "MemberRole": 1, "SuperMemberRole": 2, "MegaAdminRole": 3}
 
     @staticmethod
-    def VerifyBlock(block):
-        return True
-    
-    def VerifyTransaction(transaction, node):
+    def VerifyBlock(block, node):
+        validTransactions = []
+
+        for tr in block.transactions:
+            if BlockVerification.VerifyTransaction(tr, node):
+                validTransactions.append(tr)
+            else:
+                return False
         
-        creator = BlockchainParser.getCreator(node.blockChain)
+        return True
+
+    @staticmethod
+    def RemoveInvalidTransactionsFromBlock(block, node):
+        validTransactions = []
+
+        for tr in block.transactions:
+            if BlockVerification.VerifyTransaction(tr, node):
+                validTransactions.append(tr)
+        
+        block.transactions = validTransactions
+        
+        return block
+
+    @staticmethod
+    def VerifyTransaction(transaction, node):
+
+        if node != None:
+            blockChain = node.blockChain
+
+        myPublicKey = node.publicKey
+        
+        creator = BlockchainParser.getCreator(blockChain)
 
         #print({"creator": creator})
 
@@ -29,28 +55,50 @@ class BlockVerification:
         if transaction["sender"] == creator:
             return True
 
-        print({"groupId": transaction["groupId"]})
-        userRole = BlockchainParser.getUserRole(transaction["sender"],transaction["groupId"], node.blockChain)
-        print({"userRole":userRole})
-        permissions = []
+        allPeers = BlockchainParser.getMostRecentPeerList(blockChain)
 
-        if userRole != None:
-            permissions = BlockchainParser.getPermissionsFromRole(userRole, node.blockChain)
-        print({"permissions":permissions})
+        if allPeers != None and transaction["sender"] in allPeers["publicKeys"]:
+            if transaction["messageType"] == "PermissionDescriptor":
+                return True
 
-        group = BlockchainParser.getGroupFromGroupId(transaction["groupId"], node.blockChain)
-        print({"group":group})
+        elif transaction["sender"] == myPublicKey:
+            return True
+
+
         
+
+
         
+        """
         if transaction["messageType"] == "PeerList":
             if not "AddPeer" in permissions:
                 return False
             return True
+        """
+        
 
-        elif transaction["messageType"] == "SMS":
+        if transaction["messageType"] == "SMS":
+
+            print("--------------------------------")
+
+            print({"transaction": transaction})
+
+            print({"groupId": transaction["groupId"]})
+            userRole = BlockchainParser.getUserRole(transaction["sender"],transaction["groupId"], blockChain)
+            print({"userRole":userRole})
+            permissions = []
+
+            if userRole != None:
+                permissions = BlockchainParser.getPermissionsFromRole(userRole, blockChain)
+            print({"permissions":permissions})
+
+            group = BlockchainParser.getGroupFromGroupId(transaction["groupId"], blockChain)
+            print({"group":group})
+        
             if transaction["groupId"] == "fledgling":
                 if userRole == None: #fledgelings dont have roles, only certain permissions so this checks if this is a fledgeling sender or a grouped sender
-                    permissions = BlockchainParser.getFledglingPermissions(transaction["sender"], node.blockChain)
+
+                    permissions = BlockchainParser.getFledglingPermissions(transaction["sender"], blockChain)
 
                     for p in permissions:
                         if p["type"] == "SMS" and p["scope"] == transaction["receiver"]:
@@ -61,8 +109,9 @@ class BlockVerification:
                     if not "SendMessagesToFledgling" in permissions:
                         return False #user doesnt have permission to send to fledgelings
 
-                    from threading import Thread
-                    Thread(target=PermissionsEditor.addSendPermissionToFledgling, args=(transaction["receiver"], transaction["sender"], transaction["messageType"], node)).start()
+                    if node != None:
+                        from threading import Thread
+                        Thread(target=PermissionsEditor.addSendPermissionToFledgling, args=(transaction["receiver"], transaction["sender"], transaction["messageType"], node)).start()
                     return True
 
 
@@ -86,7 +135,6 @@ class BlockVerification:
 
     
         return False
-        print("TBI")
 
     def addressHasPermissionToContact(pubKey, Action, RecievingParty):
         print("TBI")

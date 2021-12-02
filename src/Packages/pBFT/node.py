@@ -131,7 +131,10 @@ class PBFTNode:
                     print("Proposing Block")
                     currentBlock = PBFTNode.node.createBlock("http://127.0.0.1:" + str(5000 + nodeId) + "/")
 
-                    BlockVerification.VerifyBlock(currentBlock)
+                    currentBlock = BlockVerification.RemoveInvalidTransactionsFromBlock(currentBlock, PBFTNode.node)
+
+                    if not BlockVerification.VerifyBlock(currentBlock, PBFTNode.node):
+                        raise Exception("Block Verification Error")
 
                     blockHash = currentBlock.getHash()
 
