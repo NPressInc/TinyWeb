@@ -28,15 +28,17 @@ client4 = TinyWebClient.initializeClient("4")
 
 
 
-#print(client1.sendTextMessage(client2, "I am not giving up. She doesnt love you, she is marrying me"))
+print(client1.sendTextMessage(client2, "I am not giving up. She doesnt love you, she is marrying me"))
 
-#print(client2.sendTextMessage(client3, "Angela Bernard"))
+print(client2.sendTextMessage(client3, "Angela Bernard"))
 
 print(client3.sendTextMessage(client4, "Will never be her name"))
 
 print(client4.sendTextMessage(client1, "Yes it will"))
 
 print(client1.sendTextMessage(client4, "Fight me"))
+
+time.sleep(15)
 
 print(client4.sendTextMessage(client1, "Fighting is not allowed in the office"))
 

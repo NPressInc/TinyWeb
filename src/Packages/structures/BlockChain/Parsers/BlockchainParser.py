@@ -50,6 +50,13 @@ class BlockchainParser:
         #if nothing found in the blockchain, the peer is just itself
         return None
 
+    @staticmethod
+    def printAllPermissionDescriptors(blockchain):
+        for i in range(len(blockchain.chain)-1, -1, -1):
+            BlockParser.printAllPermissionDescriptors(blockchain.chain[i])
+
+    
+
 
     @staticmethod
     def getMostRecentPeerList(blockchain):

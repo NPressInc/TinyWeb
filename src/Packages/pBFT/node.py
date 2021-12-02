@@ -82,8 +82,8 @@ class PBFTNode:
             blockChainHasProgressed = PBFTNode.node.blockChain.length != blockChainLength
 
             if counter % 10 == 0:
-                #print({"allUsersInBlockChain": len(BlockchainParser.getAllUsers(PBFTNode.node.blockChain))})
-                #print({"all Groups": BlockchainParser.getAllGroups(PBFTNode.node.blockChain)})
+                print({"allUsersInBlockChain": len(BlockchainParser.getAllUsers(PBFTNode.node.blockChain))})
+                print({"all Groups": len(BlockchainParser.getAllGroups(PBFTNode.node.blockChain))})
                 #print({"blockChainHasProgressed": blockChainHasProgressed})
                 newPeerList = BlockchainParser.getMostRecentPeerList(node.blockChain)
                 #print({"new Peer List, nodee":newPeerList})
@@ -146,7 +146,11 @@ class PBFTNode:
                     
 
             if counter % 21 == 0:
-                BlockchainParser.printAllMessages(PBFTNode.node.blockChain)
+                #BlockchainParser.printAllMessages(PBFTNode.node.blockChain)
+
+                print("------------------------------------------------------------------------------------")
+
+                #BlockchainParser.printAllPermissionDescriptors(PBFTNode.node.blockChain)
                 
                 blockChainLength = PBFTNode.node.blockChain.length
                 if (not blockChainHasProgressed) and len(PBFTNode.node.peers) != 0:
@@ -730,6 +734,10 @@ class PBFTNode:
         #print({"proposerOffset": self.proposerOffset})
         index = (self.blockChain.chain[-1].proposerId + 1 + self.proposerOffset) % (NumberOfPeers)
         return index 
+
+    def signData(self, data):
+        return Signing.normalSigning(self.__privateKey, data)
+
 
     @staticmethod
     def compressJson(input):

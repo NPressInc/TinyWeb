@@ -137,9 +137,7 @@ def TransactionInternal():
 
     hash = Serialization.hashObject(transaction)
 
-    idIpInfo = {}
     try:
-        idIpInfo = PBFTNode.node.fullPeerInfo[proposer]
         Signing.verifyingTheSignature(keySerialization.deserializePublicKey(proposer), signature, hash)
         
     except:

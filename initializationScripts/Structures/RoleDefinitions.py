@@ -5,11 +5,7 @@ MegaAdminRole = {
         "SendMessagesToGroup", 
         "RecieveCallsFromGroup",
         "MakeCallsToGroup",
-        "ReadLocationDataGroup",
-        "ReadMessagesFromFledgling",
-        "SendMessagesToFledgling",
-        "RecieveCallsFromFledgling",
-        "MakeCallsToFledgling"
+        "ReadLocationDataGroup"
     ]
 }
 
@@ -20,11 +16,7 @@ SuperMemberRole = {
         "SendMessagesToGroup",
         "RecieveCallsFromGroup", 
         "MakeCallsToGroup",
-        "ReadLocationDataMember",
-        "ReadMessagesFromFledgling",
-        "SendMessagesToFledgling",
-        "RecieveCallsFromFledgling",
-        "MakeCallsToFledgling"
+        "ReadLocationDataMember"
     ]
 }
 
@@ -35,11 +27,7 @@ MemberRole = {
         "SendMessagesToGroup", 
         "RecieveCallsFromGroup", 
         "MakeCallsToGroup",
-        "ReadLocationDataSelf",
-        "ReadMessagesFromFledgling",
-        "SendMessagesToFledgling",
-        "RecieveCallsFromFledgling",
-        "MakeCallsToFledgling"
+        "ReadLocationDataSelf"
     ]
 }
 
@@ -54,4 +42,15 @@ SubMemberRole = {
     ]
 }
 
-RoleDefinitions = [MegaAdminRole, SuperMemberRole, MemberRole, SubMemberRole]
+
+FledglingCommRole = {
+    "name": "FledglingCommRole",
+    "permissions": [
+        "ReadMessagesFromFledgling",
+        "SendMessagesToFledgling",
+        "RecieveCallsFromFledgling",
+        "MakeCallsToFledgling"
+    ]
+}
+
+RoleDefinitions = [MegaAdminRole, SuperMemberRole, MemberRole, SubMemberRole, FledglingCommRole]

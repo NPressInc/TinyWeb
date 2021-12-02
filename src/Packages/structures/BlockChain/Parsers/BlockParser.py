@@ -32,6 +32,14 @@ class BlockParser:
                 return tr["permissionNames"]
         return None
 
+    
+
+    @staticmethod
+    def printAllPermissionDescriptors(block):
+        for tr in block.transactions:
+            if tr["messageType"] == "PermissionDescriptor":
+                print({"permission": tr})
+
 
     @staticmethod
     def getUserRole(sender, groupId, block):

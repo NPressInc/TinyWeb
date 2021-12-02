@@ -30,9 +30,16 @@ class TinyWebClient:
     def sendTextMessage(self, recipient, message):
         senderPublicKeyString = keySerialization.serializePublicKey(self.publicKey)
         recipientKeyString = keySerialization.serializePublicKey(recipient.publicKey)
+        groupId = ""
+        if recipient.clientId == "4" or self.clientId == "4":
+            
+            groupId = "fledgling"
+        else:
+            groupId = "number1"
+            
 
 
-        transaction = {"messageType": "SMS","sender": senderPublicKeyString, "receiver":recipientKeyString, "context":message,"groupId":"number1", "dateTime": time.time()}
+        transaction = {"messageType": "SMS","sender": senderPublicKeyString, "receiver":recipientKeyString, "context":message,"groupId":groupId, "dateTime": time.time()}
 
         signature = Signing.normalSigning(self.__privateKey, Serialization.hashObject(transaction))
 

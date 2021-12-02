@@ -1,3 +1,4 @@
+from os import terminal_size
 from cryptography.hazmat.primitives.asymmetric import utils
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec
@@ -28,13 +29,17 @@ class BlockVerification:
         if transaction["sender"] == creator:
             return True
 
+        print({"groupId": transaction["groupId"]})
         userRole = BlockchainParser.getUserRole(transaction["sender"],transaction["groupId"], node.blockChain)
+        print({"userRole":userRole})
         permissions = []
 
         if userRole != None:
             permissions = BlockchainParser.getPermissionsFromRole(userRole, node.blockChain)
+        print({"permissions":permissions})
 
         group = BlockchainParser.getGroupFromGroupId(transaction["groupId"], node.blockChain)
+        print({"group":group})
         
         
         if transaction["messageType"] == "PeerList":
@@ -43,7 +48,7 @@ class BlockVerification:
             return True
 
         elif transaction["messageType"] == "SMS":
-            if transaction["groupId"] == "fledgeling":
+            if transaction["groupId"] == "fledgling":
                 if userRole == None: #fledgelings dont have roles, only certain permissions so this checks if this is a fledgeling sender or a grouped sender
                     permissions = BlockchainParser.getFledglingPermissions(transaction["sender"], node.blockChain)
 
@@ -57,7 +62,7 @@ class BlockVerification:
                         return False #user doesnt have permission to send to fledgelings
 
                     from threading import Thread
-                    Thread(target=PermissionsEditor.addSendPermissionToFledgling, args=(transaction["receiver"], transaction["sender"], transaction["type"], node)).start()
+                    Thread(target=PermissionsEditor.addSendPermissionToFledgling, args=(transaction["receiver"], transaction["sender"], transaction["messageType"], node)).start()
                     return True
 
 
@@ -66,7 +71,7 @@ class BlockVerification:
             else:
                 if not transaction["sender"] in group["entities"]:
                     return False #user used a group id for a group that he is not apart of
-                print(transaction)
+
                 if not transaction["receiver"] in group["entities"]:
                     return False # recipient was not in the group
                 

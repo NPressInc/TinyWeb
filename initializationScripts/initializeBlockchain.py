@@ -29,85 +29,97 @@ class blockChainInitialization:
 
         numberOfNodes = 2
 
-        peerDefTransaction = blockChainInitialization.initializePeerListForTesting(daddyClient, numberOfNodes)
-        blockChainInitialization.sendTransaction(peerDefTransaction, 0)
+        readyToSync = True
 
-        print("Waiting for blockchains to sync")
+        if readyToSync:
+            peerDefTransaction = blockChainInitialization.initializePeerListForTesting(daddyClient, numberOfNodes)
+            for i in range(numberOfNodes):
+                blockChainInitialization.sendTransaction(peerDefTransaction, i)
 
-        #time.sleep(15)
+            print("Waiting for blockchains to sync")
 
-        
+        else:
+            PermissionDefTransactions = blockChainInitialization.createPermissionsTransactions(PermissionDefinitions, daddyClient)
 
-        PermissionDefTransactions = blockChainInitialization.createPermissionsTransactions(PermissionDefinitions, daddyClient)
+            #print(PermissionDefTransactions)
+            #print("---------------------------------------------")
 
-        #print(PermissionDefTransactions)
-        #print("---------------------------------------------")
+            transactions += PermissionDefTransactions
 
-        transactions += PermissionDefTransactions
+            RoleDefinitionsTransactions = blockChainInitialization.createRolesDefTransactions(RoleDefinitions, daddyClient)
 
-        RoleDefinitionsTransactions = blockChainInitialization.createRolesDefTransactions(RoleDefinitions, daddyClient)
+            #print(RoleDefinitionsTransactions)
+            #print("---------------------------------------------")
 
-        #print(RoleDefinitionsTransactions)
-        #print("---------------------------------------------")
+            transactions += RoleDefinitionsTransactions
 
-        transactions += RoleDefinitionsTransactions
+            client1 = TinyWebClient.initializeClient("1")
+            client2 = TinyWebClient.initializeClient("2")
+            client3 = TinyWebClient.initializeClient("3")
+            client4 = TinyWebClient.initializeClient("4")
 
-        client1 = TinyWebClient.initializeClient("1")
-        client2 = TinyWebClient.initializeClient("2")
-        client3 = TinyWebClient.initializeClient("3")
-        client4 = TinyWebClient.initializeClient("4")
+            baseGroupPublicKeys = []
+            client1PublicKeyString = keySerialization.serializePublicKey(client1.publicKey)
+            baseGroupPublicKeys.append(client1PublicKeyString)
 
-        baseGroupPublicKeys = []
-        client1PublicKeyString = keySerialization.serializePublicKey(client1.publicKey)
-        baseGroupPublicKeys.append(client1PublicKeyString)
+            client2PublicKeyString = keySerialization.serializePublicKey(client2.publicKey)
+            baseGroupPublicKeys.append(client2PublicKeyString)
 
-        client2PublicKeyString = keySerialization.serializePublicKey(client2.publicKey)
-        baseGroupPublicKeys.append(client2PublicKeyString)
+            client3PublicKeyString = keySerialization.serializePublicKey(client3.publicKey)
+            baseGroupPublicKeys.append(client3PublicKeyString)
 
-        client3PublicKeyString = keySerialization.serializePublicKey(client3.publicKey)
-        baseGroupPublicKeys.append(client3PublicKeyString)
+            client4PublicKeyString = keySerialization.serializePublicKey(client4.publicKey)
 
-        client4PublicKeyString = keySerialization.serializePublicKey(client4.publicKey)
+            InitialgroupTransaction = blockChainInitialization.createInitialGroupTransaction(baseGroupPublicKeys,daddyClient)
 
-        InitialgroupTransaction = blockChainInitialization.createInitialGroupTransaction(baseGroupPublicKeys,daddyClient)
+            FledglinggroupTransaction = blockChainInitialization.createFledglingGroupTransaction(client4PublicKeyString,daddyClient)
 
-        FledglinggroupTransaction = blockChainInitialization.createFledglingGroupTransaction(client4PublicKeyString,daddyClient)
+            #print(groupTransaction)
+            #print("---------------------------------------------")
+            transactions.append(FledglinggroupTransaction)
 
-        #print(groupTransaction)
-        #print("---------------------------------------------")
-        transactions.append(FledglinggroupTransaction)
+            transactions.append(InitialgroupTransaction)
 
-        transactions.append(InitialgroupTransaction)
+            RoleDict = {}
 
-        RoleDict = {}
+            RoleDict[client1PublicKeyString] = "SuperMemberRole"
 
-        RoleDict[client1PublicKeyString] = "SuperMemberRole"
+            RoleDict[client2PublicKeyString] = "MemberRole"
 
-        RoleDict[client2PublicKeyString] = "MemberRole"
+            RoleDict[client3PublicKeyString] = "SubMemberRole"
 
-        RoleDict[client3PublicKeyString] = "SubMemberRole"
+            
 
-        roleAssignmentTransactions = blockChainInitialization.createRoleAssignmentDefTransactions(RoleDict,InitialgroupTransaction["transaction"]["groupId"], daddyClient)
-
-        #print(roleAssignmentTransactions)
-
-        transactions += roleAssignmentTransactions
-
-        #print("---------------------------------------------")
-
-        #print(transactions)
+            roleAssignmentTransactions = blockChainInitialization.createRoleAssignmentDefTransactions(RoleDict,InitialgroupTransaction["transaction"]["groupId"], daddyClient)
+            transactions += roleAssignmentTransactions
 
 
-        
+            RoleDictFledglingDict = {}
+            RoleDictFledglingDict[client1PublicKeyString] = "FledglingCommRole"
 
-        #print(peerDefTransaction)
-        #print("---------------------------------------------")
+            roleAssignmentTransactions = blockChainInitialization.createRoleAssignmentDefTransactions(RoleDictFledglingDict,"fledgling", daddyClient)
 
-        
+            transactions += roleAssignmentTransactions
+
+            #print(roleAssignmentTransactions)
+
+            
+
+            #print("---------------------------------------------")
+
+            #print(transactions)
 
 
-        for ts in transactions:
-            blockChainInitialization.sendTransaction(ts, 0)
+            
+
+            #print(peerDefTransaction)
+            #print("---------------------------------------------")
+
+            
+
+
+            for ts in transactions:
+                blockChainInitialization.sendTransaction(ts, 0)
 
     @staticmethod
     def sendTransaction(transactionObject, nodeId):

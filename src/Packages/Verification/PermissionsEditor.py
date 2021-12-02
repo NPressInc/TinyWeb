@@ -35,7 +35,7 @@ class PermissionsEditor():
 
         hash = Serialization.hashObject(permissionDescriptor)
 
-        signature = Signing.normalSigning(node.privateKey, hash)
+        signature = node.signData(hash)
 
         data = {"signature": signature, "transaction":permissionDescriptor}
 
