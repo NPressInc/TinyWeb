@@ -1,42 +1,51 @@
 MegaAdminRole = {
     "name": "MegaAdminRole",
-    "permissionHashes": [
+    "permissions": [
         "ReadMessagesFromGroup", 
         "SendMessagesToGroup", 
         "RecieveCallsFromGroup",
         "MakeCallsToGroup",
-        "ReadLocationDataGroup"
+        "ReadLocationDataGroup",
+        "ReadMessagesFromFledgling",
+        "SendMessagesToFledgling",
+        "RecieveCallsFromFledgling",
+        "MakeCallsToFledgling"
     ]
 }
 
 SuperMemberRole = {
     "name": "SuperMemberRole",
-    "permissionHashes": [
-        "ReadMessagesFromGroup", 
-        "SendMessagesToGroup", 
+    "permissions": [
+        "ReadMessagesFromGroup",
+        "SendMessagesToGroup",
         "RecieveCallsFromGroup", 
         "MakeCallsToGroup",
-        "ReadLocationDataMember"
+        "ReadLocationDataMember",
+        "ReadMessagesFromFledgling",
+        "SendMessagesToFledgling",
+        "RecieveCallsFromFledgling",
+        "MakeCallsToFledgling"
     ]
-
 }
 
 MemberRole = {
     "name": "MemberRole",
-    "permissionHashes": [
+    "permissions": [
         "ReadMessagesFromGroup", 
         "SendMessagesToGroup", 
         "RecieveCallsFromGroup", 
         "MakeCallsToGroup",
         "ReadLocationDataSelf",
+        "ReadMessagesFromFledgling",
+        "SendMessagesToFledgling",
+        "RecieveCallsFromFledgling",
+        "MakeCallsToFledgling"
     ]
-    
-
 }
 
 SubMemberRole = {
     "name": "SubMemberRole",
-    "permissionHashes": [
+    "permissions": [
         "ReadMessagesFromSuper",
         "SendMessagesToSuper",
         "RecieveCallsFromSuper",

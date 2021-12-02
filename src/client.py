@@ -6,7 +6,11 @@ from Packages.Client.ClientSimulator import ClientSimulator
 
 from Packages.Client.ApiConnector import apiConnectorMethods
 
+from Packages.structures.BlockChain.Parsers.BlockchainParser import BlockchainParser
+
 import time
+
+import sys
 
 import json
 
@@ -20,9 +24,21 @@ client3 = TinyWebClient.initializeClient("3")
 
 client4 = TinyWebClient.initializeClient("4")
 
-client5 = TinyWebClient.initializeClient("5")
 
-client1.sendTextMessage(client2, "I am not giving up. She doesnt love you, she is marrying me")
+
+
+
+#print(client1.sendTextMessage(client2, "I am not giving up. She doesnt love you, she is marrying me"))
+
+#print(client2.sendTextMessage(client3, "Angela Bernard"))
+
+print(client3.sendTextMessage(client4, "Will never be her name"))
+
+print(client4.sendTextMessage(client1, "Yes it will"))
+
+print(client1.sendTextMessage(client4, "Fight me"))
+
+print(client4.sendTextMessage(client1, "Fighting is not allowed in the office"))
 
 
 
@@ -43,7 +59,7 @@ def creatGroup():
         print(key)
 
 
-    client1.createGroup(publicKeys)
+    client1.createGroup(publicKeys, "testGroup1")
 
 
 

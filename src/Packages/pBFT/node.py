@@ -28,6 +28,7 @@ if len(sys.argv) > 2:
 
 class PBFTNode:
     node = None
+
     @staticmethod
     def runNode():
         blockChain = BlockChainReadWrite.readBlockChainFromFile(nodeId)
@@ -81,7 +82,8 @@ class PBFTNode:
             blockChainHasProgressed = PBFTNode.node.blockChain.length != blockChainLength
 
             if counter % 10 == 0:
-                #print({"allUsersInBlockChain": BlockchainParser.getAllUsers(PBFTNode.node.blockChain)})
+                #print({"allUsersInBlockChain": len(BlockchainParser.getAllUsers(PBFTNode.node.blockChain))})
+                #print({"all Groups": BlockchainParser.getAllGroups(PBFTNode.node.blockChain)})
                 #print({"blockChainHasProgressed": blockChainHasProgressed})
                 newPeerList = BlockchainParser.getMostRecentPeerList(node.blockChain)
                 #print({"new Peer List, nodee":newPeerList})
@@ -144,6 +146,7 @@ class PBFTNode:
                     
 
             if counter % 21 == 0:
+                BlockchainParser.printAllMessages(PBFTNode.node.blockChain)
                 
                 blockChainLength = PBFTNode.node.blockChain.length
                 if (not blockChainHasProgressed) and len(PBFTNode.node.peers) != 0:
@@ -305,16 +308,22 @@ class PBFTNode:
 
         data = Serialization.serializeObjToJson(data)
 
-        r = requests.post(url, data= data, headers=headers)
+        try:
 
-        if r.status_code == requests.codes.ok:
 
-            data = Serialization.deserializeObjFromJsonR(r.text)
 
-            transactions = data["pendingTransactions"]
+            r = requests.post(url, data= data, headers=headers)
 
-            return transactions
-        return {}
+            if r.status_code == requests.codes.ok:
+
+                data = Serialization.deserializeObjFromJsonR(r.text)
+
+                transactions = data["pendingTransactions"]
+
+                return transactions
+
+        except:
+            return {}
             
 
 
@@ -343,8 +352,10 @@ class PBFTNode:
 
             length = data["chainLength"]
 
+            print({"chainLengthdata":length})
+
             return length
-        print(r.status_code)
+        
         return 0
 
         #except:
@@ -401,10 +412,13 @@ class PBFTNode:
 
                 #print(data['response'] == "Blockchains shared no hashes, completely out of sync")
 
+                print({"missingBlockData":data})
+
                 if data['response'] == "Blockchains shared no hashes, completely out of sync":
                     self.requestEntireBlockChainFromPeer(peer)
                 
                 else:
+                    
                     missingBlocks = data['response']['missingBlocks']
 
                     print({"# of missing Blocks Found":len(missingBlocks)})
@@ -516,7 +530,7 @@ class PBFTNode:
             url = peer + route
             headers = {'Content-type': 'application/json',
                     'Accept': 'text/plain'}
-            Thread(target=post, args=(url,), kwargs={"json": json.loads(data)}).start()
+            Thread(target=post, args=(url,), kwargs={"json": json.loads(data), "headers": headers}).start()
 
         except:
             print("line 213: Node not found at: " + peer)
@@ -728,7 +742,7 @@ class PBFTNode:
     @staticmethod
     def configureBlockChainForFirstUse():
 
-        client1 = TinyWebClient.initializeClient("1")
+        client1 = TinyWebClient.initializeClient("0")
         client1PublicKeyString = keySerialization.serializePublicKey(client1.publicKey)
         blockChain = BlockChain(creatorPublicKey=client1PublicKeyString)
 

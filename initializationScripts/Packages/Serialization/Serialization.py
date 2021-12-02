@@ -16,6 +16,10 @@ class Serialization:
         return data
 
     @staticmethod
+    def hashString(strToHash):
+        return hashlib.sha256(strToHash.encode()).hexdigest()
+
+    @staticmethod
     def hashObject(obj):
         objString = json.dumps(obj, sort_keys=True)
         return hashlib.sha256(objString.encode()).hexdigest()

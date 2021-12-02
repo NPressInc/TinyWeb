@@ -32,7 +32,7 @@ class TinyWebClient:
         recipientKeyString = keySerialization.serializePublicKey(recipient.publicKey)
 
 
-        transaction = {"messageType": "SMS","sender": senderPublicKeyString, "receiver":recipientKeyString, "context":message, "dateTime": time.time()}
+        transaction = {"messageType": "SMS","sender": senderPublicKeyString, "receiver":recipientKeyString, "context":message,"groupId":"number1", "dateTime": time.time()}
 
         signature = Signing.normalSigning(self.__privateKey, Serialization.hashObject(transaction))
 
@@ -125,13 +125,15 @@ class TinyWebClient:
 
 
 
-    def createGroup(self, groupMembers):
+    def createGroup(self, groupMembers, groupDesctiption):
+        groupId = Serialization.hashString(groupMembers[0] + str(time.time())) #random string to be groupID. Realized that I cant identify via hash becuase groups can change.
         groupDef = {
-                "messageType": "GroupDef",
+                "messageType": "GroupDescriptor",
                 "sender": keySerialization.serializePublicKey(self.publicKey),
                 "groupType": "People",
                 "entities": groupMembers,
-                "description": "Initial Group"
+                "description": groupDesctiption,
+                "groupId": groupId
             }
         groupHash = Serialization.hashObject(groupDef)
 
@@ -156,7 +158,7 @@ class TinyWebClient:
     def broadcastGPSLocation(self, Location):
         print("TBI")
 
-    def sendVoiceCallRequest(self, Reciever):
+    def sendVoiceCallRequest(self, Receiver):
         print("TBI")
 
     def pollForUpdates(self):

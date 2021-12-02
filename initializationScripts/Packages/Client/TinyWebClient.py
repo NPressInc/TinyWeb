@@ -2,13 +2,12 @@
 import json
 
 from cryptography.hazmat.primitives import serialization
+from Packages.Client.ApiConnector import apiConnectorMethods
 
 from Packages.Serialization.Serialization import Serialization
 from ..Verification.Signing import Signing
 
 from ..Serialization.keySerialization import keySerialization
-
-
 
 import time
 
@@ -28,10 +27,20 @@ class TinyWebClient:
     def signData(self, data):
         return Signing.normalSigning(self.__privateKey, data)
 
+    def sendTextMessage(self, recipient, message):
+        senderPublicKeyString = keySerialization.serializePublicKey(self.publicKey)
+        recipientKeyString = keySerialization.serializePublicKey(recipient.publicKey)
+
+
+        transaction = {"messageType": "SMS","sender": senderPublicKeyString, "receiver":recipientKeyString, "context":message, "dateTime": time.time()}
+
+        signature = Signing.normalSigning(self.__privateKey, Serialization.hashObject(transaction))
+
+        TinyWebClient.sendTransaction({"transaction":transaction, "signature": signature})
+
 
     def sendTestMessages(self, recipient):
         message1 = "Lets Rage"
-
         message2 = "No, lets age"
 
         senderPublicKeyString = keySerialization.serializePublicKey(self.publicKey)
@@ -39,7 +48,7 @@ class TinyWebClient:
 
         FauxTransactionList = []
 
-        for i in range(0,12):
+        for i in range(0,1000):
             transaction1 = {"messageType": "SMS","sender": senderPublicKeyString, "receiver":recipientKeyString, "context":message1, "dateTime": time.time() + i}
             transaction2 = {"messageType": "SMS","sender": senderPublicKeyString, "receiver":recipientKeyString, "context":message2, "dateTime": time.time() + i}
             signature1 = Signing.normalSigning(self.__privateKey, Serialization.hashObject(transaction1))
@@ -49,8 +58,8 @@ class TinyWebClient:
             
         
         counter = 0
-        numberOfMessages = 2000
-        secondsBetweenMessages = 2
+        numberOfMessages = 200
+        secondsBetweenMessages = 0.5
 
         while counter < numberOfMessages:
             counter += 1
@@ -61,10 +70,15 @@ class TinyWebClient:
     @staticmethod
     def sendTransaction(transactionObject):
         import requests
+        print("about to send transaction")
         url = "http://127.0.0.1:"+ str(5000 + nodeId) +"/Transaction"
         data = Serialization.serializeObjToJson(transactionObject)
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         r = requests.post(url, data=data, headers=headers)
+        if r.status_code == requests.codes.ok:
+            data = Serialization.deserializeObjFromJsonR(r.text)
+            print(data)
+
         print("sent Transaction")
 
     @staticmethod
@@ -73,7 +87,10 @@ class TinyWebClient:
         try:
             __privateKey = Signing.PrivateKeyMethods.loadPrivateKeyClient(clientId)
             client = TinyWebClient(privateKey=__privateKey, publicKey=Signing.PrivateKeyMethods.generatePublicKeyFromPrivate(__privateKey), clientId=clientId,LocationOn= True)
+            
+
             print("Loaded Client: " + clientId)
+            print(keySerialization.serializePublicKey(Signing.PrivateKeyMethods.generatePublicKeyFromPrivate(__privateKey)))
         except:
             client = TinyWebClient.initializeNewClient(clientId)
             Signing.PrivateKeyMethods.savePrivateKeyClient(client.__privateKey, clientId)
@@ -103,20 +120,39 @@ class TinyWebClient:
         return json.dumps(outputObject, sort_keys=True)
 
 
-    
-
-
-
-
     @staticmethod
     def deseriralizeJSON(jsonString):
         jsonDict = json.loads(jsonString)
         return TinyWebClient(**jsonDict)
 
-    def getPeers(self):
-        print("TBI")
 
-    def sendTextMessage(self, Reciever, Message):
+
+
+    def createGroup(self, groupMembers, groupDesctiption):
+        groupId = Serialization.hashString(groupMembers[0] + str(time.time())) #random string to be groupID. Realized that I cant identify via hash becuase groups can change.
+        groupDef = {
+                "messageType": "GroupDef",
+                "sender": keySerialization.serializePublicKey(self.publicKey),
+                "groupType": "People",
+                "entities": groupMembers,
+                "description": groupDesctiption,
+                "groupId": groupId
+            }
+        groupHash = Serialization.hashObject(groupDef)
+
+        signature = Signing.normalSigning(self.__privateKey, groupHash)
+
+        data = {
+            "transaction":groupDef,
+            "signature":signature
+        }
+
+        apiConnectorMethods.sendTransaction(data)
+
+    
+
+
+    def getPeers(self):
         print("TBI")
     
     def sendGroupMessage(self, RecievingGroup, Message):

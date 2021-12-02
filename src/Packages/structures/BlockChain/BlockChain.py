@@ -42,7 +42,7 @@ class BlockChain:
 
         transactions.append({
             "messageType": "CreatorAssignment",
-            "creator": creatorPublicKey
+            "sender": creatorPublicKey
         })
 
         #for tr in transactions:

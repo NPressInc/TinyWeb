@@ -11,6 +11,46 @@ if len(sys.argv) > 2:
 
 class BlockchainParser:
 
+
+    @staticmethod
+    def getAllGroups(blockchain):
+        allgroups = []
+        for i in range(len(blockchain.chain)):
+            groupsInBlock = BlockParser.getAllgroups(blockchain.chain[i])
+            if len(groupsInBlock) != 0:
+                allgroups = allgroups + groupsInBlock
+
+        return allgroups
+
+    @staticmethod
+    def getGroupFromGroupId(groupId, blockchain):
+        for i in range(len(blockchain.chain)-1, -1, -1):
+            group = BlockParser.getGroupFromGroupId(groupId, blockchain.chain[i])
+            if group != None:
+                return group
+        #if nothing found in the blockchain, the peer is just itself
+        return None
+
+
+    @staticmethod
+    def getUserRole(sender, groupId, blockchain):
+        for i in range(len(blockchain.chain)-1, -1, -1):
+            role = BlockParser.getUserRole(sender, groupId, blockchain.chain[i])
+            if role != None:
+                return role
+        #if nothing found in the blockchain, the peer is just itself
+        return None
+
+    @staticmethod
+    def getPermissionsFromRole(roleName, blockchain):
+        for i in range(len(blockchain.chain)-1, -1, -1):
+            permissions = BlockParser.getPermissionsFromRole(roleName, blockchain.chain[i])
+            if permissions != None:
+                return permissions
+        #if nothing found in the blockchain, the peer is just itself
+        return None
+
+
     @staticmethod
     def getMostRecentPeerList(blockchain):
         for i in range(len(blockchain.chain)-1, -1, -1):
@@ -19,6 +59,12 @@ class BlockchainParser:
                 return peerlist
         #if nothing found in the blockchain, the peer is just itself
         return None
+
+    @staticmethod
+    def printAllMessages(blockchain):
+        print("About to print all messages")
+        for i in range(len(blockchain.chain)):
+            BlockParser.printAllMessages(blockchain.chain[i])
 
 
     @staticmethod
@@ -32,9 +78,28 @@ class BlockchainParser:
         genesisBlock = blockchain.chain[0]
         for transaction in genesisBlock.transactions:
             if transaction["messageType"] == "CreatorAssignment":
-                allUsers.append(transaction["creator"])
+                allUsers.append(transaction["sender"])
                 
         return list(set(allUsers))
+
+    @staticmethod
+    def getCreator(blockchain):
+        genesisBlock = blockchain.chain[0]
+        for transaction in genesisBlock.transactions:
+            if transaction["messageType"] == "CreatorAssignment":
+                return transaction["sender"]
+        return None
+
+    @staticmethod
+    def getFledglingPermissions(user ,blockchain):
+        allPermissions = []
+        for i in range(len(blockchain.chain)):
+            permissionsInBlock = BlockParser.getFledglingPermissions(user,blockchain.chain[i])
+            if len(permissionsInBlock) != 0:
+                allPermissions = allPermissions + permissionsInBlock
+        return allPermissions
+
+        
 
     """
 

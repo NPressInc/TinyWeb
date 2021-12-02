@@ -5,11 +5,24 @@ PermissionDefinitions = [
         "type": "SMS",
         "scope": "group"
     },
+    #the user can read messages from everyone in the fledgling group
+    {
+        "name": "ReadMessagesFromFledgling",
+        "type": "SMS",
+        "scope": "Fledglings"
+    },
     #the user can send messages to everyone in their group
     {
         "name": "SendMessagesToGroup",
         "type": "SMS",
         "scope": "group"
+    },
+
+    #the user can send messages to everyone in the fledgling group
+    {
+        "name": "SendMessagesToFledgling",
+        "type": "SMS",
+        "scope": "Fledglings"
     },
 
     #the user can read messages that they sent and recieve from superMembers
@@ -24,11 +37,18 @@ PermissionDefinitions = [
         "type": "SMS",
         "scope": "super"
     },
-    #the user can recieve class directed towards them
+    #the user can recieve calls directed towards them from their group
     {
         "name": "RecieveCallsFromGroup",
         "type": "Voice",
         "scope": "group"
+    },
+
+    #the user can recieve calls directed towards them from the fledgling group
+    {
+        "name": "RecieveCallsFromFledgling",
+        "type": "Voice",
+        "scope": "Fledglings"
     },
     #the user can voice call anyone in their group
     {
@@ -36,6 +56,13 @@ PermissionDefinitions = [
         "type": "Voice",
         "scope": "group"
     },
+    #the user can voice call users in the fledgling group
+    {
+        "name": "MakeCallsToFledgling",
+        "type": "Voice",
+        "scope": "Fledglings"
+    },
+    #can recieveCalls from super members
     {
         "name": "RecieveCallsFromSuper",
         "type": "Voice",

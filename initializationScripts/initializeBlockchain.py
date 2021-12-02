@@ -1,5 +1,6 @@
 
 
+from hashlib import new
 from Packages.Client.TinyWebClient import TinyWebClient
 
 from Packages.Serialization.keySerialization import keySerialization
@@ -10,12 +11,18 @@ import requests
 
 from Packages.Verification.Signing import Signing
 
+from Structures.PermissionDefinitions import PermissionDefinitions
+
+from Structures.RoleDefinitions import RoleDefinitions
+
+import time
+
 
 
 class blockChainInitialization:
 
     @staticmethod
-    def sendTransactionsToBlockchain():
+    def sendInitialTransactionsToBlockchain():
         transactions = []
 
         daddyClient = TinyWebClient.initializeClient("0")
@@ -23,14 +30,84 @@ class blockChainInitialization:
         numberOfNodes = 2
 
         peerDefTransaction = blockChainInitialization.initializePeerListForTesting(daddyClient, numberOfNodes)
+        blockChainInitialization.sendTransaction(peerDefTransaction, 0)
 
-        transactions.append(peerDefTransaction)
+        print("Waiting for blockchains to sync")
+
+        #time.sleep(15)
+
+        
+
+        PermissionDefTransactions = blockChainInitialization.createPermissionsTransactions(PermissionDefinitions, daddyClient)
+
+        #print(PermissionDefTransactions)
+        #print("---------------------------------------------")
+
+        transactions += PermissionDefTransactions
+
+        RoleDefinitionsTransactions = blockChainInitialization.createRolesDefTransactions(RoleDefinitions, daddyClient)
+
+        #print(RoleDefinitionsTransactions)
+        #print("---------------------------------------------")
+
+        transactions += RoleDefinitionsTransactions
+
+        client1 = TinyWebClient.initializeClient("1")
+        client2 = TinyWebClient.initializeClient("2")
+        client3 = TinyWebClient.initializeClient("3")
+        client4 = TinyWebClient.initializeClient("4")
+
+        baseGroupPublicKeys = []
+        client1PublicKeyString = keySerialization.serializePublicKey(client1.publicKey)
+        baseGroupPublicKeys.append(client1PublicKeyString)
+
+        client2PublicKeyString = keySerialization.serializePublicKey(client2.publicKey)
+        baseGroupPublicKeys.append(client2PublicKeyString)
+
+        client3PublicKeyString = keySerialization.serializePublicKey(client3.publicKey)
+        baseGroupPublicKeys.append(client3PublicKeyString)
+
+        client4PublicKeyString = keySerialization.serializePublicKey(client4.publicKey)
+
+        InitialgroupTransaction = blockChainInitialization.createInitialGroupTransaction(baseGroupPublicKeys,daddyClient)
+
+        FledglinggroupTransaction = blockChainInitialization.createFledglingGroupTransaction(client4PublicKeyString,daddyClient)
+
+        #print(groupTransaction)
+        #print("---------------------------------------------")
+        transactions.append(FledglinggroupTransaction)
+
+        transactions.append(InitialgroupTransaction)
+
+        RoleDict = {}
+
+        RoleDict[client1PublicKeyString] = "SuperMemberRole"
+
+        RoleDict[client2PublicKeyString] = "MemberRole"
+
+        RoleDict[client3PublicKeyString] = "SubMemberRole"
+
+        roleAssignmentTransactions = blockChainInitialization.createRoleAssignmentDefTransactions(RoleDict,InitialgroupTransaction["transaction"]["groupId"], daddyClient)
+
+        #print(roleAssignmentTransactions)
+
+        transactions += roleAssignmentTransactions
+
+        #print("---------------------------------------------")
+
+        #print(transactions)
+
+
+        
+
+        #print(peerDefTransaction)
+        #print("---------------------------------------------")
+
+        
+
 
         for ts in transactions:
-            for i in range(numberOfNodes):
-                blockChainInitialization.sendTransaction(ts, i)
-
-
+            blockChainInitialization.sendTransaction(ts, 0)
 
     @staticmethod
     def sendTransaction(transactionObject, nodeId):
@@ -53,11 +130,11 @@ class blockChainInitialization:
             peerList.append("http://127.0.0.1:" + str(5000 + i) +"/")
             privateKey = Signing.PrivateKeyMethods.loadPrivateKeyNode(i)
 
-            print({"The private key":keySerialization.serializePrivateKey(privateKey)})
+            #print({"The private key":keySerialization.serializePrivateKey(privateKey)})
             publickey = privateKey.public_key()
             publicKeyList.append(keySerialization.serializePublicKey(publickey))
 
-            print("For node: " + str(i) + " the public key is: " + keySerialization.serializePublicKey(publickey))
+            #print("For node: " + str(i) + " the public key is: " + keySerialization.serializePublicKey(publickey))
             idList.append(i)
 
         publicKeyString = keySerialization.serializePublicKey(daddyClient.publicKey)
@@ -81,47 +158,52 @@ class blockChainInitialization:
         return data
 
     @staticmethod
-    def createRolesDefTransactions(RoleDefinitions, permissionNameHashDict, creatorPK):
-        roleHashDict = {}
+    def createRolesDefTransactions(RoleDefinitions, daddyClient):
         transactions = []
+
+        publicKeyString = keySerialization.serializePublicKey(daddyClient.publicKey)
 
         for RoleDef in RoleDefinitions:
             newRole = {
                 "messageType": "RoleDescriptor",
                 "name": RoleDef["name"],
-                "sender": creatorPK,
-                "permissionHashes": RoleDef["permissionHashes"]
+                "sender": publicKeyString,
+                "permissionNames": RoleDef["permissions"]
             }
-            for i in range(len(RoleDef["permissionHashes"])):
-                
-                newRole["permissionHashes"][i] = permissionNameHashDict[newRole["permissionHashes"][i]]
 
-            hash = Serialization.hashRoleDef(newRole)
+            hash = Serialization.hashObject(newRole)
 
-            roleHashDict[newRole["name"]] = hash
+            signature = daddyClient.signData(hash)
 
-            transactions.append(newRole)
+            transactions.append({"signature": signature, "transaction": newRole})
 
-        return [transactions, roleHashDict]
-
-    @staticmethod
-    def createRoleAssignmentDefTransactions(RoleDict, roleHashDict, groupHash):
-        transactions = []
-        for key in RoleDict:
-                roleAssignment = {
-                    "messageType": "RoleAssignment",
-                    "user": key,
-                    "roleHash": roleHashDict[RoleDict[key]],
-                    "groupHash": groupHash
-                }
-                transactions.append(roleAssignment)
         return transactions
 
     @staticmethod
-    def createPermissionsTransactions(PermissionDefinitions, creatorPK):
-        permissionNameHashDict = {}
+    def createRoleAssignmentDefTransactions(RoleDict, groupId, daddyClient):
+        transactions = []
+        publicKeyString = keySerialization.serializePublicKey(daddyClient.publicKey)
+        for key in RoleDict:
+            roleAssignment = {
+                "messageType": "RoleAssignment",
+                "user": key,
+                "roleName": RoleDict[key],
+                "groupId": groupId,
+                "sender": publicKeyString
+            }
+            hash = Serialization.hashObject(roleAssignment)
+
+            signature = daddyClient.signData(hash)
+
+            transactions.append({"signature": signature, "transaction": roleAssignment})
+        return transactions
+
+    @staticmethod
+    def createPermissionsTransactions(PermissionDefinitions, daddyClient):
 
         transactions = []
+
+        publicKeyString = keySerialization.serializePublicKey(daddyClient.publicKey)
 
         for Permission in PermissionDefinitions:
             newPermission = {
@@ -129,31 +211,57 @@ class blockChainInitialization:
                 "name": Permission["name"],
                 "type": Permission["type"],
                 "scope": Permission["scope"],
-                "sender": creatorPK
+                "sender": publicKeyString
             }
-            hash = Serialization.hashPermissionDef(newPermission)
+            hash = Serialization.hashObject(newPermission)
 
-            permissionNameHashDict[newPermission["name"]] = hash
+            signature = daddyClient.signData(hash)
 
-            transactions.append(newPermission)
+            transactions.append({"signature": signature, "transaction": newPermission})
 
-        return [transactions, permissionNameHashDict]
+
+        return transactions
 
 
     @staticmethod
-    def createGroupsTransactions(initialGroupMemebers, creatorPK):
+    def createInitialGroupTransaction(initialGroupMemebers, daddyClient):
+        import time
+        #groupId = Serialization.hashString(initialGroupMemebers[0] + str(time.time())) #random string to be groupID. Realized that I cant identify via hash becuase groups can change.
+        groupId = "number1"
+        publicKeyString = keySerialization.serializePublicKey(daddyClient.publicKey)
         groupDef = {
-                "messageType": "GroupDef",
-                "sender": creatorPK,
+                "messageType": "GroupDescriptor",
+                "sender": publicKeyString,
                 "groupType": "People",
                 "entities": initialGroupMemebers,
-                "description": "Initial Group"
+                "description": "Initial Group",
+                "groupId": groupId
             }
+        hash = Serialization.hashObject(groupDef)
 
-        groupHash = Serialization.hashGroupDef(groupDef)
+        signature = daddyClient.signData(hash)
 
-        return {"hash": groupHash, "groupDef": groupDef}
+        return {"signature": signature, "transaction": groupDef}
 
+
+    @staticmethod
+    def createFledglingGroupTransaction(fledglingClient, daddyClient):
+        import time
+        groupId = "fledgling"
+        publicKeyString = keySerialization.serializePublicKey(daddyClient.publicKey)
+        groupDef = {
+                "messageType": "GroupDescriptor",
+                "sender": publicKeyString,
+                "groupType": "People",
+                "entities": [fledglingClient],
+                "description": "OutsidersGroup",
+                "groupId": groupId
+            }
+        hash = Serialization.hashObject(groupDef)
+
+        signature = daddyClient.signData(hash)
+
+        return {"signature": signature, "transaction": groupDef}
 
 
 
@@ -176,16 +284,8 @@ class blockChainInitialization:
             client3.publicKey)
         baseGroupPublicKeys.append(client3PublicKeyString)
 
-        RoleDict = {}
-
-        RoleDict[client1PublicKeyString] = "SuperMemberRole"
-
-        RoleDict[client2PublicKeyString] = "MemberRole"
-
-        RoleDict[client3PublicKeyString] = "SubMemberRole"
+        
 
 
 
-
-
-blockChainInitialization.sendTransactionsToBlockchain()
+blockChainInitialization.sendInitialTransactionsToBlockchain()
