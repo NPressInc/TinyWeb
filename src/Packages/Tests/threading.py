@@ -2,41 +2,45 @@ import time
 import threading
 import importlib.util
 import sys
+from typing import Counter
 
-from ..Communication.MessageReciever import app
+
 from ..structures.BlockChain.BlockChain import BlockChain
 from ..pBFT.node import PBFTNode
+
+from ..FileIO.readLoadBlockChain import BlockChainReadWrite
+
+
+
+from ..Client.ClientSimulator import ClientSimulator
 
 
 
 class ThreadingTests:
-    @staticmethod
-    def threadFunc():
-        
-        blockChain = BlockChain()
-        time.sleep(5)
-        node = PBFTNode(0, blockChain)
-        node.peers.append("me")
-        node.PeerIpDict["me"] = "http://127.0.0.1:5000/"
-        node.proposeNewBlock()
 
-    @staticmethod
-    def runFlask():
-        app.run(debug=False)
+
+    
+        
 
     @staticmethod
     def threadingTest():
-        thServer = threading.Thread(target=ThreadingTests.runFlask)
-        th = threading.Thread(target=ThreadingTests.threadFunc)
+        FlaskThread = threading.Thread(target=ThreadingTests.runNodeFlask)
+        nodeTestThread = threading.Thread(target=ThreadingTests.NodeTestFunc)
 
-        th.start()
+        nodeTestThread.start()
 
-        thServer.start()
+        FlaskThread.start()
 
-        time.sleep(30)
 
-        th.join()
 
-        thServer.join
+
+        time.sleep(1000)
+
+
+
+
+        nodeTestThread.join()
+
+        FlaskThread.join
 
 

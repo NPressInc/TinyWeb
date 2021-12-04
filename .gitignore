@@ -1,0 +1,13 @@
+*.PEM
+*.pem
+*.dat
+build
+docs/_build
+.pytest_cache
+.eggs/
+.tox/
+*.egg-info/
+*.pyc
+*.so
+__pycache__
+blockChainDB.db/

@@ -2,8 +2,7 @@
 import hashlib,sys
 import json
 
-
-
+from ...Serialization.Serialization import Serialization
 
 class MerkleTreeNode:
     
@@ -18,7 +17,6 @@ class MerkleTreeNode:
     
     def buildTree(self, transactions):
         nodes = []
-        print(transactions)
         for value in transactions:
             nodes.append(MerkleTreeNode(value))
 
@@ -58,7 +56,7 @@ class MerkleTreeNode:
 
     def serializeJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__, 
-            sort_keys=True, indent=4)
+            sort_keys=True)
 
 
     

@@ -34,8 +34,6 @@ class MerkleTree:
             output += 1
         
         return output
-        
-
     
 
     def getTransactionNodeFromIndex(self, index):
@@ -55,7 +53,6 @@ class MerkleTree:
 
         currNode = self.rootNode
         for direction in navigation:
-            print(currNode.value)
             if direction == "0":
                 currNode = currNode.left
             else:
@@ -176,7 +173,7 @@ class MerkleTree:
             "depth": self.depth
         }
         return json.dumps(output, default=lambda o: o.__dict__, 
-            sort_keys=True, indent=4)
+            sort_keys=True)
     """
     def toCustomStringRepresentation(self):
         
