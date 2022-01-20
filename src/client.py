@@ -8,6 +8,8 @@ from Packages.Client.ApiConnector import apiConnectorMethods
 
 from Packages.structures.BlockChain.Parsers.BlockchainParser import BlockchainParser
 
+from Packages.Encryption.Encryption import Encryption
+
 import time
 
 import sys
@@ -24,6 +26,39 @@ client3 = TinyWebClient.initializeClient("3")
 
 client4 = TinyWebClient.initializeClient("4")
 
+client5 = TinyWebClient.initializeClient("5")
+
+
+clientsWithAccess = [
+    keySerialization.serializePublicKey(client2.publicKey),
+    keySerialization.serializePublicKey(client3.publicKey),
+    keySerialization.serializePublicKey(client4.publicKey),
+    ]
+
+
+encryptedData = client1.encryptDataForMultiplePublicKeys(clientsWithAccess, b"Hello")
+
+decryptedData = client2.dencryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"])
+
+print(encryptedData)
+print( decryptedData.decode("utf-8") )
+
+decryptedData = client3.dencryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"])
+
+
+print( decryptedData.decode("utf-8") )
+
+decryptedData = client4.dencryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"])
+
+print( decryptedData.decode("utf-8") )
+
+decryptedData = client5.dencryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"])
+
+print( decryptedData.decode("utf-8") )
+
+
+
+sys.exit()
 
 
 

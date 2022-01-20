@@ -11,3 +11,4 @@ docs/_build
 *.so
 __pycache__
 blockChainDB.db/
+env
