@@ -91,8 +91,6 @@ def Transaction():
 
     PBFTNode.node.reBroadcastMessage(Serialization.serializeObjToJson(jsn), "Transaction")
 
-    #time.sleep(1)
-
     PBFTNode.node.ProposerId = PBFTNode.node.calculateProposerId()
 
     print({"Proposer Id":PBFTNode.node.ProposerId})
