@@ -1,6 +1,5 @@
 
 
-from brotli.brotli import compress
 from ..structures.BlockChain.BlockChain import BlockChain
 from ..Serialization.Serialization import Serialization
 import brotli
