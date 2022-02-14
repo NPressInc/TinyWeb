@@ -130,7 +130,7 @@ class BlockParser:
             if tr["messageType"] == "SMS":
                 if PublicKeyString == tr["receiver"]:
                     parsedMessage = TinyMessage(**tr)
-                    messages.append(parsedMessage)
+                    messages.append(parsedMessage.toJson())
         return messages    
 
         

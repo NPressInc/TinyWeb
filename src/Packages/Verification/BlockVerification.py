@@ -70,7 +70,6 @@ class BlockVerification:
         if transaction["messageType"] == "GPS":
             return True
 
-
         
         """
         if transaction["messageType"] == "PeerList":

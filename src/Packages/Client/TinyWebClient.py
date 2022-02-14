@@ -1,5 +1,7 @@
 
 import json
+import numbers
+from tokenize import Double
 
 from Packages.Client.ApiConnector import apiConnectorMethods
 
@@ -46,14 +48,27 @@ class TinyWebClient:
             groupId = "fledgling"
         else:
             groupId = "number1"
-            
 
+        conversationId = TinyWebClient.getConversationIdFromKeys(senderPublicKeyString, recipientKeyString)
 
-        transaction = {"messageType": "SMS","sender": senderPublicKeyString, "receiver":recipientKeyString, "context":message,"groupId":groupId, "dateTime": time.time()}
+        transaction = {"messageType": "SMS","sender": senderPublicKeyString, "receiver":recipientKeyString, "conversationId":conversationId ,"context":message,"groupId":groupId, "dateTime": time.time()}
 
         signature = Signing.normalSigning(self.__privateKey, Serialization.hashObject(transaction))
 
         TinyWebClient.sendTransaction({"transaction":transaction, "signature": signature})
+
+    @staticmethod
+    def getConversationIdFromKeys(key1, key2): # this takes the keys of a conversation and creates a unique conversationID for the participants in the conversation. This makes it easy for the clients to recal a conversation based on Id or by the participants
+        concat = (key1 + key2)
+
+        import hashlib
+
+        encoded = concat.encode()
+
+        hash = hashlib.sha256(encoded)
+
+        return int(hash.hexdigest(),16)%(10 ** 8)
+
 
 
     def sendTestMessages(self, recipient):

@@ -14,7 +14,8 @@ import time
 
 import sys
 
-import json
+
+
 
 client0 = TinyWebClient.initializeClient("0")
 
@@ -29,19 +30,36 @@ client4 = TinyWebClient.initializeClient("4")
 client5 = TinyWebClient.initializeClient("5")
 
 
-print(client1.sendTextMessage(client2, "I am not giving up. She doesnt love you, she is marrying me"))
 
-print(client2.sendTextMessage(client3, "Angela Bernard"))
 
-print(client3.sendTextMessage(client4, "Will never be her name"))
+def testMessageSendingFledgeling():
+    print(client1.sendTextMessage(client2, "I am not giving up. She doesnt love you, she is marrying me"))
 
-print(client4.sendTextMessage(client1, "Yes it will"))
+    print(client2.sendTextMessage(client3, "Angela Bernard"))
 
-print(client1.sendTextMessage(client4, "Fight me"))
+    print(client3.sendTextMessage(client4, "Will never be her name"))
 
-time.sleep(15)
+    print(client4.sendTextMessage(client1, "Yes it will"))
 
-print(client4.sendTextMessage(client1, "Fighting is not allowed in the office"))
+    print(client1.sendTextMessage(client4, "Fight me"))
+
+    time.sleep(10)
+
+    print(client4.sendTextMessage(client1, "Fighting is not allowed in the office"))
+
+
+def testConvsersationIdGenerator():
+    print(client1.getConversationIdFromKeys(keySerialization.serializePublicKey(client1.publicKey), keySerialization.serializePublicKey(client2.publicKey)))
+    print("Here")
+    print(client1.getConversationIdFromKeys(keySerialization.serializePublicKey(client2.publicKey), keySerialization.serializePublicKey(client2.publicKey)))
+    print("Here")
+    print(client1.getConversationIdFromKeys(keySerialization.serializePublicKey(client3.publicKey), keySerialization.serializePublicKey(client2.publicKey)))
+    print("Here")
+    print(client1.getConversationIdFromKeys(keySerialization.serializePublicKey(client4.publicKey), keySerialization.serializePublicKey(client2.publicKey)))
+    print("Here")
+    print(client1.getConversationIdFromKeys(keySerialization.serializePublicKey(client5.publicKey), keySerialization.serializePublicKey(client2.publicKey)))
+    print("Here")
+    print(client1.getConversationIdFromKeys(keySerialization.serializePublicKey(client1.publicKey), keySerialization.serializePublicKey(client3.publicKey)))
 
 
 def testMultiEncrypt():
@@ -80,8 +98,6 @@ def testMultiEncrypt():
 
     print( decryptedData.decode("utf-8") )
 
-
-
     sys.exit()
 
 
@@ -107,6 +123,10 @@ def creatGroup():
 
 
 
+testMessageSendingFledgeling()
+
+
+
 
 #print("Done sending first messages")
 
@@ -114,4 +134,4 @@ def creatGroup():
 
 #print("Recieved Messages")
 
-#print(apiConnectorMethods.getReceivedMessages(client2))
+
