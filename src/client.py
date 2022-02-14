@@ -29,40 +29,6 @@ client4 = TinyWebClient.initializeClient("4")
 client5 = TinyWebClient.initializeClient("5")
 
 
-clientsWithAccess = [
-    keySerialization.serializePublicKey(client2.publicKey),
-    keySerialization.serializePublicKey(client3.publicKey),
-    keySerialization.serializePublicKey(client4.publicKey),
-    ]
-
-
-encryptedData = client1.encryptDataForMultiplePublicKeys(clientsWithAccess, b"Hello")
-
-decryptedData = client2.dencryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"])
-
-print(encryptedData)
-print( decryptedData.decode("utf-8") )
-
-decryptedData = client3.dencryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"])
-
-
-print( decryptedData.decode("utf-8") )
-
-decryptedData = client4.dencryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"])
-
-print( decryptedData.decode("utf-8") )
-
-decryptedData = client5.dencryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"])
-
-print( decryptedData.decode("utf-8") )
-
-
-
-sys.exit()
-
-
-
-
 print(client1.sendTextMessage(client2, "I am not giving up. She doesnt love you, she is marrying me"))
 
 print(client2.sendTextMessage(client3, "Angela Bernard"))
@@ -76,6 +42,47 @@ print(client1.sendTextMessage(client4, "Fight me"))
 time.sleep(15)
 
 print(client4.sendTextMessage(client1, "Fighting is not allowed in the office"))
+
+
+def testMultiEncrypt():
+
+    clientsWithAccess = [
+        keySerialization.serializePublicKey(client2.publicKey),
+        keySerialization.serializePublicKey(client3.publicKey),
+        keySerialization.serializePublicKey(client4.publicKey),
+        keySerialization.serializePublicKey(client1.publicKey),
+    ]
+
+
+    encryptedData = client1.encryptDataForMultiplePublicKeys(clientsWithAccess, b"Hello")
+    print(encryptedData)
+
+    decryptedData = client1.dencryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"])
+
+
+    print( decryptedData.decode("utf-8") )
+
+    decryptedData = client2.dencryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"])
+
+
+    print( decryptedData.decode("utf-8") )
+
+    decryptedData = client3.dencryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"])
+
+
+    print( decryptedData.decode("utf-8") )
+
+    decryptedData = client4.dencryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"])
+
+    print( decryptedData.decode("utf-8") )
+
+    decryptedData = client5.dencryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"])
+
+    print( decryptedData.decode("utf-8") )
+
+
+
+    sys.exit()
 
 
 

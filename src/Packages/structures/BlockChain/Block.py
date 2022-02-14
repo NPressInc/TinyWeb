@@ -61,6 +61,7 @@ class Block:
 
         dictTransactions = []
 
+        
         for tr in blockDict["transactions"]:
             data = tr
 
@@ -70,7 +71,6 @@ class Block:
             
             dictTransactions.append(data)
 
-        
         blockDict["transactions"] = dictTransactions
         
         

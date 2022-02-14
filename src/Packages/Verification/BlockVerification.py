@@ -8,6 +8,8 @@ from ..structures.BlockChain.Parsers.BlockchainParser import BlockchainParser
 
 from ..Verification.PermissionsEditor import PermissionsEditor
 
+import traceback
+
 
 
 class BlockVerification:
@@ -19,7 +21,7 @@ class BlockVerification:
         validTransactions = []
 
         for tr in block.transactions:
-            if BlockVerification.VerifyTransaction(tr, node):
+            if BlockVerification.VerifyTransaction(tr, node, "BlockVerification"):
                 validTransactions.append(tr)
             else:
                 return False
@@ -31,7 +33,7 @@ class BlockVerification:
         validTransactions = []
 
         for tr in block.transactions:
-            if BlockVerification.VerifyTransaction(tr, node):
+            if BlockVerification.VerifyTransaction(tr, node, "RemoveInvalidTransactions"):
                 validTransactions.append(tr)
         
         block.transactions = validTransactions
@@ -39,7 +41,7 @@ class BlockVerification:
         return block
 
     @staticmethod
-    def VerifyTransaction(transaction, node):
+    def VerifyTransaction(transaction, node, sauce):
 
         if node != None:
             blockChain = node.blockChain
@@ -80,21 +82,20 @@ class BlockVerification:
 
         if transaction["messageType"] == "SMS":
 
-            print("--------------------------------")
+            print("--------------------------------" + sauce)
 
             print({"transaction": transaction})
 
-            print({"groupId": transaction["groupId"]})
+            #for line in traceback.format_stack():
+                #print(line.strip())
+
             userRole = BlockchainParser.getUserRole(transaction["sender"],transaction["groupId"], blockChain)
-            print({"userRole":userRole})
             permissions = []
 
             if userRole != None:
                 permissions = BlockchainParser.getPermissionsFromRole(userRole, blockChain)
-            print({"permissions":permissions})
 
             group = BlockchainParser.getGroupFromGroupId(transaction["groupId"], blockChain)
-            print({"group":group})
         
             if transaction["groupId"] == "fledgling":
                 if userRole == None: #fledgelings dont have roles, only certain permissions so this checks if this is a fledgeling sender or a grouped sender

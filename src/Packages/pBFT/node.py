@@ -82,8 +82,8 @@ class PBFTNode:
             blockChainHasProgressed = PBFTNode.node.blockChain.length != blockChainLength
 
             if counter % 10 == 0:
-                print({"allUsersInBlockChain": len(BlockchainParser.getAllUsers(PBFTNode.node.blockChain))})
-                print({"all Groups": len(BlockchainParser.getAllGroups(PBFTNode.node.blockChain))})
+                #print({"allUsersInBlockChain": len(BlockchainParser.getAllUsers(PBFTNode.node.blockChain))})
+                #print({"all Groups": len(BlockchainParser.getAllGroups(PBFTNode.node.blockChain))})
                 #print({"blockChainHasProgressed": blockChainHasProgressed})
                 newPeerList = BlockchainParser.getMostRecentPeerList(node.blockChain)
                 #print({"new Peer List, nodee":newPeerList})
@@ -130,6 +130,8 @@ class PBFTNode:
                 if (not blockChainHasProgressed) and PBFTNode.node.calculateProposerId() == PBFTNode.node.id:
                     print("Proposing Block")
                     currentBlock = PBFTNode.node.createBlock("http://127.0.0.1:" + str(5000 + nodeId) + "/")
+
+                    print({"current Transactions in proposing block":currentBlock.transactions})
 
                     currentBlock = BlockVerification.RemoveInvalidTransactionsFromBlock(currentBlock, PBFTNode.node)
 
@@ -413,6 +415,8 @@ class PBFTNode:
 
             if r.status_code == requests.codes.ok:
 
+                print({"response from other server for missing block request": r.text})
+
                 data = Serialization.deserializeObjFromJsonR(r.text)
 
                 #print({"result from missing block request":data['response']})
@@ -432,8 +436,9 @@ class PBFTNode:
 
                     if len(missingBlocks) > 0:
                         for i in range(len(missingBlocks)-1, -1, -1):
-                            if BlockVerification.VerifyBlock(missingBlocks[i]) == True:
-                                PBFTNode.node.blockChain.add_block( Block.deserializeJSON(missingBlocks[i]))
+                            deserializedBlock = Block.deserializeJSON(missingBlocks[i])
+                            if BlockVerification.VerifyBlock(deserializedBlock,self.node) == True:
+                                PBFTNode.node.blockChain.add_block(deserializedBlock)
                             else: 
                                 raise Exception("Resync of blockchain failed becuase of invalid block")
             else:
@@ -441,7 +446,6 @@ class PBFTNode:
 
         except Exception as e :
             print(str(e))
-            print({"Missing Peer in block Request"})
 
     def requestEntireBlockChainFromPeer(self, peer):
         import requests
