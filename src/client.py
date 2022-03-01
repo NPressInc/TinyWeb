@@ -14,6 +14,9 @@ import time
 
 import sys
 
+import base64
+
+
 
 
 
@@ -62,6 +65,7 @@ def testConvsersationIdGenerator():
     print(client1.getConversationIdFromKeys(keySerialization.serializePublicKey(client1.publicKey), keySerialization.serializePublicKey(client3.publicKey)))
 
 
+
 def testMultiEncrypt():
 
     clientsWithAccess = [
@@ -75,28 +79,27 @@ def testMultiEncrypt():
     encryptedData = client1.encryptDataForMultiplePublicKeys(clientsWithAccess, b"Hello")
     print(encryptedData)
 
-    decryptedData = client1.dencryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"])
+    decryptedData = client1.decryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"], encryptedData["iv"],encryptedData["ivs"])
+
+    print({"decrypted1":decryptedData } )
+
+    decryptedData = client2.decryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"], encryptedData["iv"],encryptedData["ivs"])
 
 
-    print( decryptedData.decode("utf-8") )
+    print({"decrypted2":decryptedData } )
 
-    decryptedData = client2.dencryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"])
-
-
-    print( decryptedData.decode("utf-8") )
-
-    decryptedData = client3.dencryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"])
+    decryptedData = client3.decryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"], encryptedData["iv"],encryptedData["ivs"])
 
 
-    print( decryptedData.decode("utf-8") )
+    print({"decrypted3":decryptedData } )
 
-    decryptedData = client4.dencryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"])
+    decryptedData = client4.decryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"], encryptedData["iv"],encryptedData["ivs"])
 
-    print( decryptedData.decode("utf-8") )
+    print({"decrypted4":decryptedData } )
 
-    decryptedData = client5.dencryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"])
+    decryptedData = client5.decryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"], encryptedData["iv"],encryptedData["ivs"])
 
-    print( decryptedData.decode("utf-8") )
+    print({"decrypted5":decryptedData } )
 
     sys.exit()
 
@@ -123,7 +126,7 @@ def creatGroup():
 
 
 
-testMessageSendingFledgeling()
+testMultiEncrypt()
 
 
 

@@ -23,7 +23,7 @@ nodeId = 0
 if len(sys.argv) > 2:
     nodeId = int(sys.argv[2])
 
-
+speedModifier = 1
 
 
 class PBFTNode:
@@ -176,7 +176,7 @@ class PBFTNode:
                 print("Saving Blockchain every 100 seconds")
                 BlockChainReadWrite.saveBlockChainToFile(node.blockChain, PBFTNode.node.id)
 
-            time.sleep(1)
+            time.sleep(speedModifier)
             counter += 1
             
             #print({"in Node, blockchain state":PBFTNode.node.blockChain.getListOfBlockHashes()})
@@ -338,37 +338,37 @@ class PBFTNode:
 
     def getBlockChainLengthOfPeer(self, peer):
 
-        #try:
-        url = peer + "GetBlockChainLength"
-    
-        publicKeyString = keySerialization.serializePublicKey(self.publicKey)
-        signature = Signing.normalSigning(self.__privateKey, str(publicKeyString))
-        data = {
-            "sender": publicKeyString,
-            "signature":signature
-        }
+        try:
+            url = peer + "GetBlockChainLength"
         
-        headers = {'Content-type': 'application/json',
-                'Accept': 'text/plain'}
+            publicKeyString = keySerialization.serializePublicKey(self.publicKey)
+            signature = Signing.normalSigning(self.__privateKey, str(publicKeyString))
+            data = {
+                "sender": publicKeyString,
+                "signature":signature
+            }
+            
+            headers = {'Content-type': 'application/json',
+                    'Accept': 'text/plain'}
 
-        data = Serialization.serializeObjToJson(data)
-        
-        r = requests.post(url, data= data, headers=headers)
+            data = Serialization.serializeObjToJson(data)
+            
+            r = requests.post(url, data= data, headers=headers)
 
-        if r.status_code == requests.codes.ok:
+            if r.status_code == requests.codes.ok:
 
-            data = Serialization.deserializeObjFromJsonR(r.text)
+                data = Serialization.deserializeObjFromJsonR(r.text)
 
-            length = data["chainLength"]
+                length = data["chainLength"]
 
-            print({"chainLengthdata":length})
+                print({"chainLengthdata":length})
 
-            return length
-        
-        return 0
+                return length
+            
+            return 0
 
-        #except:
-            #return 0
+        except:
+            return 0
     
     def signData(self, data):
         return Signing.normalSigning(self.__privateKey, data)

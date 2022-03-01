@@ -1,4 +1,5 @@
 
+import imp
 import json
 import numbers
 from tokenize import Double
@@ -9,6 +10,7 @@ from Packages.Serialization.Serialization import Serialization
 from ..Verification.Signing import Signing
 
 from ..Serialization.keySerialization import keySerialization
+from ..Encryption.Encryption import Encryption
 
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec
@@ -18,6 +20,8 @@ from Packages.Serialization.Serialization import Serialization
 from Packages.Serialization.keySerialization import keySerialization
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.fernet import Fernet
+
+from ..Encryption.PrivateKeyMethods import PrivateKeyMethods
 
 import base64
 
@@ -39,6 +43,8 @@ class TinyWebClient:
     def signData(self, data):
         return Signing.normalSigning(self.__privateKey, data)
 
+
+
     def sendTextMessage(self, recipient, message):
         senderPublicKeyString = keySerialization.serializePublicKey(self.publicKey)
         recipientKeyString = keySerialization.serializePublicKey(recipient.publicKey)
@@ -49,9 +55,11 @@ class TinyWebClient:
         else:
             groupId = "number1"
 
+        EncMessage, iv = self.encryptDataForPublicKey(self, recipientKeyString,message)
+
         conversationId = TinyWebClient.getConversationIdFromKeys(senderPublicKeyString, recipientKeyString)
 
-        transaction = {"messageType": "SMS","sender": senderPublicKeyString, "receiver":recipientKeyString, "conversationId":conversationId ,"context":message,"groupId":groupId, "dateTime": time.time()}
+        transaction = {"messageType": "SMS","sender": senderPublicKeyString, "receiver":recipientKeyString, "conversationId":conversationId, "iv":iv ,"context":EncMessage,"groupId":groupId, "dateTime": time.time()}
 
         signature = Signing.normalSigning(self.__privateKey, Serialization.hashObject(transaction))
 
@@ -117,12 +125,12 @@ class TinyWebClient:
     def initializeClient(clientId):
         client = None
         try:
-            __privateKey = Signing.PrivateKeyMethods.loadPrivateKeyClient(clientId)
-            client = TinyWebClient(privateKey=__privateKey, publicKey=Signing.PrivateKeyMethods.generatePublicKeyFromPrivate(__privateKey), clientId=clientId,LocationOn= True)
+            __privateKey = PrivateKeyMethods.loadPrivateKeyClient(clientId)
+            client = TinyWebClient(privateKey=__privateKey, publicKey=PrivateKeyMethods.generatePublicKeyFromPrivate(__privateKey), clientId=clientId,LocationOn= True)
             print("Loaded Client: " + clientId)
         except:
             client = TinyWebClient.initializeNewClient(clientId)
-            Signing.PrivateKeyMethods.savePrivateKeyClient(client.__privateKey, clientId)
+            PrivateKeyMethods.savePrivateKeyClient(client.__privateKey, clientId)
             print("Created New Client: " + clientId)
 
         return client
@@ -131,8 +139,8 @@ class TinyWebClient:
     @staticmethod
     def initializeNewClient(clientId):
         client = TinyWebClient()
-        client.__privateKey = Signing.PrivateKeyMethods.generatePrivateKey()
-        client.publicKey = Signing.PrivateKeyMethods.generatePublicKeyFromPrivate(client.__privateKey)
+        client.__privateKey = PrivateKeyMethods.generatePrivateKey()
+        client.publicKey = PrivateKeyMethods.generatePublicKeyFromPrivate(client.__privateKey)
         client.LocationOn = True
         client.clientId = clientId
 
@@ -179,160 +187,19 @@ class TinyWebClient:
         apiConnectorMethods.sendTransaction(data)
 
     def encryptDataForMultiplePublicKeys(self, recipientPublicKeyStrings, data):
-
-        encryptedKeys = []
-
-        generatedKey = Fernet.generate_key()
-
-        f = Fernet(generatedKey)
-
-        encryptedData  = f.encrypt(data)
-        
-
-        for recipientPublicKeyString in recipientPublicKeyStrings:
-
-            recipientPublicKey = keySerialization.deserializePublicKey(recipientPublicKeyString)
-            shared_key = self.__privateKey.exchange(
-                ec.ECDH(), recipientPublicKey)
-            # Perform key derivation.
-            derived_key = HKDF(
-                algorithm=hashes.SHA256(),
-                length=32,
-                salt=None,
-                info=b'handshake data',
-            ).derive(shared_key)
-
-            password = derived_key
-            salt = None
-            kdf = PBKDF2HMAC(
-                algorithm=hashes.SHA256(),
-                length=32,
-                salt=b"randomSalt",
-                iterations=390000,
-            )
-            key = base64.urlsafe_b64encode(kdf.derive(password))
-
-            f2 = Fernet(key)
-            
-            encryptedKeys.append(f2.encrypt(generatedKey))
-
-        
-        return {"EncryptedData": encryptedData, "EncryptedKeys": encryptedKeys}
+        return Encryption.encryptDataForMultiplePublicKeys(self.__privateKey, recipientPublicKeyStrings, data)
 
 
-    def dencryptDataFromMultiEncryptedData(self, senderPublicKeyString, encryptedKeys,data):
-
-        senderPublicKey = keySerialization.deserializePublicKey(senderPublicKeyString)
-        shared_key = self.__privateKey.exchange(
-            ec.ECDH(), senderPublicKey)
-        # Perform key derivation.
-        derived_key = HKDF(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt=None,
-            info=b'handshake data',
-        ).derive(shared_key)
-
-        password = derived_key
-        salt = None
-        kdf = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt=b"randomSalt",
-            iterations=390000,
-        )
-        key = base64.urlsafe_b64encode(kdf.derive(password))
-
-        f = Fernet(key)
-
-        decryptedKey = None
-
-        for encKey in encryptedKeys:
-            try:
-                decryptedKey = f.decrypt(encKey)
-                break
-            except:
-                continue
-
-        if decryptedKey == None:
-            raise Exception("No Encrypted Keys Matched. No access given")
-
-        f2 = Fernet(decryptedKey)
-
-        return f2.decrypt(data)
-
+    def decryptDataFromMultiEncryptedData(self, senderPublicKeyString, encryptedKeys,data, iv, ivs):
+        return Encryption.decryptDataFromMultiEncryptedData(self.__privateKey, senderPublicKeyString, encryptedKeys,data, iv, ivs)
 
 
     def encryptDataForPublicKey(self, recipientPublicKeyString, data):
-
-        recipientPublicKey = keySerialization.deserializePublicKey(recipientPublicKeyString)
-
-        shared_key = self.__privateKey.exchange(
-            ec.ECDH(), recipientPublicKey)
-        # Perform key derivation.
-        derived_key = HKDF(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt=None,
-            info=b'handshake data',
-        ).derive(shared_key)
-
-        print(type(derived_key))
-        print(derived_key)
-
-
-        password = derived_key
-        salt = None
-        kdf = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt=b"randomSalt",
-            iterations=390000,
-        )
-        key = base64.urlsafe_b64encode(kdf.derive(password))
-
-        f = Fernet(key)
-
-        return f.encrypt(data)
-
+        return Encryption.encryptDataForPublicKey(self.__privateKey, recipientPublicKeyString, data)
 
 
     def decryptdata(self, SenderPublicKeyString, data):
-
-        SenderPublicKey = keySerialization.deserializePublicKey(SenderPublicKeyString)
-
-        same_shared_key = self.__privateKey.exchange(
-            ec.ECDH(), SenderPublicKey)
-        # Perform key derivation.
-        derived_key = HKDF(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt=None,
-            info=b'handshake data',
-        ).derive(same_shared_key)
-
-        print(type(derived_key))
-        print(derived_key)
-
-        password = derived_key
-        salt = None
-        kdf = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt=b"randomSalt",
-            iterations=390000,
-        )
-        key = base64.urlsafe_b64encode(kdf.derive(password))
-
-        try:
-            f = Fernet(key)
-
-            return f.decrypt(data)
-
-        except:
-            print("Invalid Key")
-
-        
+        return Encryption.decryptdata(self.__privateKey, SenderPublicKeyString, data)
 
 
     def getPeers(self):

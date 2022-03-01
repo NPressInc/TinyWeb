@@ -130,3 +130,14 @@ class Serialization:
         hash = hashlib.sha256(GroupDefString.encode()).hexdigest()
 
         return hash
+        
+
+    @staticmethod
+    def getBase64String(inputBytes):
+        import base64
+        return base64.b64encode(inputBytes).decode("utf-8")
+
+    @staticmethod
+    def getOriginalBytesFromBase64String(inputBase64String):
+        import base64
+        return base64.b64decode(inputBase64String.encode("utf-8"))
