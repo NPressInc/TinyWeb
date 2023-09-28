@@ -12,4 +12,4 @@ docs/_build
 __pycache__
 blockChainDB.db/
 env
-src/virtualenviornment
+src/virtualenviornment/
