@@ -108,27 +108,25 @@ class BlockchainParser:
 
         
 
-    """
-
     @staticmethod
     def getGroupByHash(blockchain, hash):
-        outputGroup = outputGroups = Rocks.getGroupFromGroupHash(hash)
-        if outputGroup != None:
-            return outputGroup
+        #outputGroup = outputGroups = Rocks.getGroupFromGroupHash(hash)
+        #if outputGroup != None:
+            #return outputGroup
 
         outputGroup = {}
 
         for block in blockchain.chain:
             group = BlockParser.findGroupFromGroupHash(block, hash)
 
-        Rocks.setGroupsFromPublicKey(hash, json.dumps(group))
-        return outputGroups
+        #Rocks.setGroupsFromPublicKey(hash, json.dumps(group))
+        return outputGroup
 
     @staticmethod
     def getGroupsByPublicKey(blockchain, publicKeyString):
-        outputGroups = Rocks.getGroupsFromPublicKey(publicKeyString)
-        if outputGroups != None:
-            return outputGroups
+        #outputGroups = Rocks.getGroupsFromPublicKey(publicKeyString)
+        #if outputGroups != None:
+            #return outputGroups
 
         outputGroups = []
 
@@ -139,16 +137,15 @@ class BlockchainParser:
                 for group in groups:
                     outputGroups.append(group)
 
-        Rocks.setGroupsFromPublicKey(publicKeyString, json.dumps(outputGroups))
+        #Rocks.setGroupsFromPublicKey(publicKeyString, json.dumps(outputGroups))
         return outputGroups
 
     @staticmethod
     def getallMessagesFromPublicKey(blockchain, publicKeyString):
-        print("TBI")
-        return None
-        outputGroups = Rocks.getGroupsFromPublicKey(publicKeyString)
-        if outputGroups != None:
-            return outputGroups
+        
+        #outputGroups = Rocks.getGroupsFromPublicKey(publicKeyString)
+        #if outputGroups != None:
+            #return outputGroups
 
         outputGroups = []
 
@@ -159,7 +156,7 @@ class BlockchainParser:
                 for group in groups:
                     outputGroups.append(group)
 
-        Rocks.setGroupsFromPublicKey(publicKeyString, json.dumps(outputGroups))
+        #Rocks.setGroupsFromPublicKey(publicKeyString, json.dumps(outputGroups))
         return outputGroups
 
     @staticmethod
@@ -177,8 +174,8 @@ class BlockchainParser:
                 for group in groups:
                     outputMessages.append(group)
 
-        Rocks.setRecievedMessagesFromPublicKey(
-            publicKeyString, json.dumps(outputMessages))
+        #Rocks.setRecievedMessagesFromPublicKey(
+            #publicKeyString, json.dumps(outputMessages))
         return outputMessages
 
     @staticmethod
@@ -196,9 +193,8 @@ class BlockchainParser:
                 for group in groups:
                     outputMessages.append(group)
 
-        Rocks.setSentMessagesFromPublicKey(
-            publicKeyString, json.dumps(outputMessages))
+        #Rocks.setSentMessagesFromPublicKey(
+            #publicKeyString, json.dumps(outputMessages))
         return outputMessages
     
-    """
 

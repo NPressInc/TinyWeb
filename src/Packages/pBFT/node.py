@@ -23,7 +23,7 @@ nodeId = 0
 if len(sys.argv) > 2:
     nodeId = int(sys.argv[2])
 
-
+speedModifier = 1
 
 
 class PBFTNode:
@@ -82,8 +82,8 @@ class PBFTNode:
             blockChainHasProgressed = PBFTNode.node.blockChain.length != blockChainLength
 
             if counter % 10 == 0:
-                print({"allUsersInBlockChain": len(BlockchainParser.getAllUsers(PBFTNode.node.blockChain))})
-                print({"all Groups": len(BlockchainParser.getAllGroups(PBFTNode.node.blockChain))})
+                #print({"allUsersInBlockChain": len(BlockchainParser.getAllUsers(PBFTNode.node.blockChain))})
+                #print({"all Groups": len(BlockchainParser.getAllGroups(PBFTNode.node.blockChain))})
                 #print({"blockChainHasProgressed": blockChainHasProgressed})
                 newPeerList = BlockchainParser.getMostRecentPeerList(node.blockChain)
                 #print({"new Peer List, nodee":newPeerList})
@@ -131,6 +131,8 @@ class PBFTNode:
                     print("Proposing Block")
                     currentBlock = PBFTNode.node.createBlock("http://127.0.0.1:" + str(5000 + nodeId) + "/")
 
+                    print({"current Transactions in proposing block":currentBlock.transactions})
+
                     currentBlock = BlockVerification.RemoveInvalidTransactionsFromBlock(currentBlock, PBFTNode.node)
 
                     if not BlockVerification.VerifyBlock(currentBlock, PBFTNode.node):
@@ -174,7 +176,7 @@ class PBFTNode:
                 print("Saving Blockchain every 100 seconds")
                 BlockChainReadWrite.saveBlockChainToFile(node.blockChain, PBFTNode.node.id)
 
-            time.sleep(1)
+            time.sleep(speedModifier)
             counter += 1
             
             #print({"in Node, blockchain state":PBFTNode.node.blockChain.getListOfBlockHashes()})
@@ -336,37 +338,37 @@ class PBFTNode:
 
     def getBlockChainLengthOfPeer(self, peer):
 
-        #try:
-        url = peer + "GetBlockChainLength"
-    
-        publicKeyString = keySerialization.serializePublicKey(self.publicKey)
-        signature = Signing.normalSigning(self.__privateKey, str(publicKeyString))
-        data = {
-            "sender": publicKeyString,
-            "signature":signature
-        }
+        try:
+            url = peer + "GetBlockChainLength"
         
-        headers = {'Content-type': 'application/json',
-                'Accept': 'text/plain'}
+            publicKeyString = keySerialization.serializePublicKey(self.publicKey)
+            signature = Signing.normalSigning(self.__privateKey, str(publicKeyString))
+            data = {
+                "sender": publicKeyString,
+                "signature":signature
+            }
+            
+            headers = {'Content-type': 'application/json',
+                    'Accept': 'text/plain'}
 
-        data = Serialization.serializeObjToJson(data)
-        
-        r = requests.post(url, data= data, headers=headers)
+            data = Serialization.serializeObjToJson(data)
+            
+            r = requests.post(url, data= data, headers=headers)
 
-        if r.status_code == requests.codes.ok:
+            if r.status_code == requests.codes.ok:
 
-            data = Serialization.deserializeObjFromJsonR(r.text)
+                data = Serialization.deserializeObjFromJsonR(r.text)
 
-            length = data["chainLength"]
+                length = data["chainLength"]
 
-            print({"chainLengthdata":length})
+                print({"chainLengthdata":length})
 
-            return length
-        
-        return 0
+                return length
+            
+            return 0
 
-        #except:
-            #return 0
+        except:
+            return 0
     
     def signData(self, data):
         return Signing.normalSigning(self.__privateKey, data)
@@ -413,6 +415,8 @@ class PBFTNode:
 
             if r.status_code == requests.codes.ok:
 
+                print({"response from other server for missing block request": r.text})
+
                 data = Serialization.deserializeObjFromJsonR(r.text)
 
                 #print({"result from missing block request":data['response']})
@@ -432,8 +436,9 @@ class PBFTNode:
 
                     if len(missingBlocks) > 0:
                         for i in range(len(missingBlocks)-1, -1, -1):
-                            if BlockVerification.VerifyBlock(missingBlocks[i]) == True:
-                                PBFTNode.node.blockChain.add_block( Block.deserializeJSON(missingBlocks[i]))
+                            deserializedBlock = Block.deserializeJSON(missingBlocks[i])
+                            if BlockVerification.VerifyBlock(deserializedBlock,self.node) == True:
+                                PBFTNode.node.blockChain.add_block(deserializedBlock)
                             else: 
                                 raise Exception("Resync of blockchain failed becuase of invalid block")
             else:
@@ -441,7 +446,6 @@ class PBFTNode:
 
         except Exception as e :
             print(str(e))
-            print({"Missing Peer in block Request"})
 
     def requestEntireBlockChainFromPeer(self, peer):
         import requests

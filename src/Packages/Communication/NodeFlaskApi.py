@@ -72,6 +72,8 @@ def Transaction():
     transactionHash = Serialization.hashObject(transaction)
     pubKey = keySerialization.deserializePublicKey(sender)
 
+    
+
     if transactionHash in MessageQueues.transactionQueue:
         return json.dumps({"response": "Transaction Already Queued"})
 
@@ -84,14 +86,12 @@ def Transaction():
     except:
         return json.dumps({"response": "KeyError"})
 
-    if not BlockVerification.VerifyTransaction(transaction, PBFTNode.node):
+    if not BlockVerification.VerifyTransaction(transaction, PBFTNode.node, "Transactions"):
         return json.dumps({"response": "invalid Permissions"})
 
     MessageQueues.transactionQueue[transactionHash] = transaction
 
     PBFTNode.node.reBroadcastMessage(Serialization.serializeObjToJson(jsn), "Transaction")
-
-    #time.sleep(1)
 
     PBFTNode.node.ProposerId = PBFTNode.node.calculateProposerId()
 
@@ -379,7 +379,7 @@ def CommitVote():
             #print("about to send newRound")
 
             if block.getHash() == PBFTNode.node.blockChain.last_block().getHash():
-                #print("Block Already Commited to chain")
+                print("Block Already Commited to chain")
                 MessageQueues.CommitedBlockDict[blockHash] = blockHash
                 PBFTNode.node.broadcastNewRoundVotesToPeers(recievedHash, blockString)
                 return jsonify({"response": "Block Already Commited to chain"})
@@ -399,6 +399,8 @@ def CommitVote():
                 PBFTNode.node.blockChain.add_block(block)
 
                 MessageQueues.CommitedBlockDict[blockHash] = blockHash
+
+                PBFTNode.node.broadcastNewRoundVotesToPeers(recievedHash, blockString)
 
                 print({"Block Committed, BlockChainLength": len(PBFTNode.node.blockChain.chain)})
 
@@ -472,6 +474,9 @@ def NewRound():
         minApprovals = int(2 * (activePeers / 3) + 1)
 
 
+        print({"New Round Votes": len(MessageQueues.newRoundMessages[recievedHash])})
+        print({"minApprovals":minApprovals})
+
         if recievedHash in MessageQueues.newRoundMessages:
             if len(MessageQueues.newRoundMessages[recievedHash]) >= minApprovals:
                 reachedThreshold = True
@@ -492,7 +497,7 @@ def NewRound():
                 print({"Block Committed, BlockChainLength": len(PBFTNode.node.blockChain.chain)})
 
 
-            #print("Clearing House")
+            print("Clearing House")
             if recievedHash in MessageQueues.validationVotes:
                 del MessageQueues.validationVotes[recievedHash]
             if recievedHash in MessageQueues.commitMessages:

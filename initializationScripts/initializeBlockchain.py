@@ -29,14 +29,13 @@ class blockChainInitialization:
 
         numberOfNodes = 2
 
-        readyToSync = True
-
+        readyToSync = True  # This is a manual type of switch that I use to initialize blockchains. First Set to false to create groups on one node. Then sync nodes afterwards by setting to True
+        #must start the starter node before the second node
         if readyToSync:
             peerDefTransaction = blockChainInitialization.initializePeerListForTesting(daddyClient, numberOfNodes)
             for i in range(numberOfNodes):
                 blockChainInitialization.sendTransaction(peerDefTransaction, i)
 
-            print("Waiting for blockchains to sync")
 
         else:
             PermissionDefTransactions = blockChainInitialization.createPermissionsTransactions(PermissionDefinitions, daddyClient)
@@ -75,7 +74,7 @@ class blockChainInitialization:
             FledglinggroupTransaction = blockChainInitialization.createFledglingGroupTransaction(client4PublicKeyString,daddyClient)
 
             #print(groupTransaction)
-            #print("---------------------------------------------")
+            print("---------------------------------------------")
             transactions.append(FledglinggroupTransaction)
 
             transactions.append(InitialgroupTransaction)

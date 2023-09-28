@@ -37,30 +37,30 @@ exit()
 
 
 def runNodeFlask():
-    from waitress import serve
-    #app.run(debug=False, port=5000 + nodeId)
-    serve(app, host="127.0.0.1", port=(5000 + nodeId))
+    #from waitress import serve
+    app.run(debug=False, port=5000 + nodeId)
+    #serve(app, host="127.0.0.1", port=(5000 + nodeId))
 
 def runBlockChainApiFlask():
     BCQapp.run(debug=False, port=5050 + nodeId)
 
 #runBlockChainApiFlask
-#BCQAThread = threading.Thread(target=runBlockChainApiFlask)
+BCQAThread = threading.Thread(target=runBlockChainApiFlask)
 FlaskThread = threading.Thread(target=runNodeFlask)
 RunNodeThread = threading.Thread(target=PBFTNode.runNode)
 
-RunNodeThread.start()
+#RunNodeThread.start()
 
-FlaskThread.start()
+#FlaskThread.start()
 
-#BCQAThread.start()
-
-
-time.sleep(1000)
+BCQAThread.start()
 
 
-#BCQAThread.join()
+time.sleep(100000)
 
-RunNodeThread.join()
 
-FlaskThread.join
+BCQAThread.join()
+
+#RunNodeThread.join()
+
+#FlaskThread.join

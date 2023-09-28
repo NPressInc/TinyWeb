@@ -1,6 +1,7 @@
 
 from os import stat
 from Packages.Serialization.Serialization import Serialization
+from ....models.messages import TinyMessage
 
 #getAllUsers
 class BlockParser:
@@ -24,7 +25,6 @@ class BlockParser:
         return None
 
 
-
     @staticmethod
     def getPermissionsFromRole(roleName, block):
         for tr in block.transactions:
@@ -32,7 +32,6 @@ class BlockParser:
                 return tr["permissionNames"]
         return None
 
-    
 
     @staticmethod
     def printAllPermissionDescriptors(block):
@@ -130,7 +129,8 @@ class BlockParser:
             tr = block.transactions[i]
             if tr["messageType"] == "SMS":
                 if PublicKeyString == tr["receiver"]:
-                    messages.append(tr)
+                    parsedMessage = TinyMessage(**tr)
+                    messages.append(parsedMessage.toJson())
         return messages    
 
         

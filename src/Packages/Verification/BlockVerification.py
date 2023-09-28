@@ -8,6 +8,8 @@ from ..structures.BlockChain.Parsers.BlockchainParser import BlockchainParser
 
 from ..Verification.PermissionsEditor import PermissionsEditor
 
+import traceback
+
 
 
 class BlockVerification:
@@ -19,7 +21,7 @@ class BlockVerification:
         validTransactions = []
 
         for tr in block.transactions:
-            if BlockVerification.VerifyTransaction(tr, node):
+            if BlockVerification.VerifyTransaction(tr, node, "BlockVerification"):
                 validTransactions.append(tr)
             else:
                 return False
@@ -31,7 +33,7 @@ class BlockVerification:
         validTransactions = []
 
         for tr in block.transactions:
-            if BlockVerification.VerifyTransaction(tr, node):
+            if BlockVerification.VerifyTransaction(tr, node, "RemoveInvalidTransactions"):
                 validTransactions.append(tr)
         
         block.transactions = validTransactions
@@ -39,7 +41,7 @@ class BlockVerification:
         return block
 
     @staticmethod
-    def VerifyTransaction(transaction, node):
+    def VerifyTransaction(transaction, node, sauce):
 
         if node != None:
             blockChain = node.blockChain
@@ -65,8 +67,8 @@ class BlockVerification:
             return True
 
 
-        
-
+        if transaction["messageType"] == "GPS":
+            return True
 
         
         """
@@ -79,21 +81,20 @@ class BlockVerification:
 
         if transaction["messageType"] == "SMS":
 
-            print("--------------------------------")
+            print("--------------------------------" + sauce)
 
             print({"transaction": transaction})
 
-            print({"groupId": transaction["groupId"]})
+            #for line in traceback.format_stack():
+                #print(line.strip())
+
             userRole = BlockchainParser.getUserRole(transaction["sender"],transaction["groupId"], blockChain)
-            print({"userRole":userRole})
             permissions = []
 
             if userRole != None:
                 permissions = BlockchainParser.getPermissionsFromRole(userRole, blockChain)
-            print({"permissions":permissions})
 
             group = BlockchainParser.getGroupFromGroupId(transaction["groupId"], blockChain)
-            print({"group":group})
         
             if transaction["groupId"] == "fledgling":
                 if userRole == None: #fledgelings dont have roles, only certain permissions so this checks if this is a fledgeling sender or a grouped sender
@@ -114,9 +115,6 @@ class BlockVerification:
                         Thread(target=PermissionsEditor.addSendPermissionToFledgling, args=(transaction["receiver"], transaction["sender"], transaction["messageType"], node)).start()
                     return True
 
-
-                
-
             else:
                 if not transaction["sender"] in group["entities"]:
                     return False #user used a group id for a group that he is not apart of
@@ -133,6 +131,56 @@ class BlockVerification:
 
                 return False #they did not have group send permission and if they did have toSuper sending ability, the recipient did not qualify
 
+        if transaction["messageType"] == "Voice":
+
+            print("--------------------------------")
+
+            print({"groupId": transaction["groupId"]})
+            userRole = BlockchainParser.getUserRole(transaction["sender"],transaction["groupId"], blockChain)
+            print({"userRole":userRole})
+            permissions = []
+
+            if userRole != None:
+                permissions = BlockchainParser.getPermissionsFromRole(userRole, blockChain)
+            print({"permissions":permissions})
+
+            group = BlockchainParser.getGroupFromGroupId(transaction["groupId"], blockChain)
+            print({"group":group})
+        
+            if transaction["groupId"] == "fledgling":
+                if userRole == None: #fledgelings dont have roles, only certain permissions so this checks if this is a fledgeling sender or a grouped sender
+
+                    permissions = BlockchainParser.getFledglingPermissions(transaction["sender"], blockChain)
+
+                    for p in permissions:
+                        if p["type"] == "Voice" and p["scope"] == transaction["receiver"]:
+                            return True
+                    return False # this triggers if no permissions matched the receiver of the message
+                
+                else:
+                    if not "MakeCallsToFledgling" in permissions:
+                        return False #user doesnt have permission to send to fledgelings
+
+                    if node != None:
+                        from threading import Thread
+                        Thread(target=PermissionsEditor.addSendPermissionToFledgling, args=(transaction["receiver"], transaction["sender"], transaction["messageType"], node)).start()
+                    return True
+
+            else:
+                if not transaction["sender"] in group["entities"]:
+                    return False #user used a group id for a group that he is not apart of
+
+                if not transaction["receiver"] in group["entities"]:
+                    return False # recipient was not in the group
+                
+                if "MakeCallsToGroup" in permissions:
+                    return True
+                
+                receiverRole = BlockchainParser.getUserRole(transaction["sender"],transaction["groupId"])
+                if "MakeCallsToSuper" in permissions and BlockVerification.roleHeirarchy[receiverRole] > 1:
+                    return True # they had the send Super permission and the recipient was either Super or Mega Member
+
+                return False #they did not have group send permission and if they did have toSuper sending ability, the recipient did not qualify
     
         return False
 

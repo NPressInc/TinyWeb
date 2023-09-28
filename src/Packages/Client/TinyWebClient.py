@@ -1,13 +1,29 @@
 
+import imp
 import json
+import numbers
+from tokenize import Double
 
-from cryptography.hazmat.primitives import serialization
 from Packages.Client.ApiConnector import apiConnectorMethods
 
 from Packages.Serialization.Serialization import Serialization
 from ..Verification.Signing import Signing
 
 from ..Serialization.keySerialization import keySerialization
+from ..Encryption.Encryption import Encryption
+
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+
+from Packages.Serialization.Serialization import Serialization
+from Packages.Serialization.keySerialization import keySerialization
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.fernet import Fernet
+
+from ..Encryption.PrivateKeyMethods import PrivateKeyMethods
+
+import base64
 
 import time
 
@@ -27,6 +43,8 @@ class TinyWebClient:
     def signData(self, data):
         return Signing.normalSigning(self.__privateKey, data)
 
+
+
     def sendTextMessage(self, recipient, message):
         senderPublicKeyString = keySerialization.serializePublicKey(self.publicKey)
         recipientKeyString = keySerialization.serializePublicKey(recipient.publicKey)
@@ -36,14 +54,29 @@ class TinyWebClient:
             groupId = "fledgling"
         else:
             groupId = "number1"
-            
 
+        EncMessage, iv = self.encryptDataForPublicKey(self, recipientKeyString,message)
 
-        transaction = {"messageType": "SMS","sender": senderPublicKeyString, "receiver":recipientKeyString, "context":message,"groupId":groupId, "dateTime": time.time()}
+        conversationId = TinyWebClient.getConversationIdFromKeys(senderPublicKeyString, recipientKeyString)
+
+        transaction = {"messageType": "SMS","sender": senderPublicKeyString, "receiver":recipientKeyString, "conversationId":conversationId, "iv":iv ,"context":EncMessage,"groupId":groupId, "dateTime": time.time()}
 
         signature = Signing.normalSigning(self.__privateKey, Serialization.hashObject(transaction))
 
         TinyWebClient.sendTransaction({"transaction":transaction, "signature": signature})
+
+    @staticmethod
+    def getConversationIdFromKeys(key1, key2): # this takes the keys of a conversation and creates a unique conversationID for the participants in the conversation. This makes it easy for the clients to recal a conversation based on Id or by the participants
+        concat = (key1 + key2)
+
+        import hashlib
+
+        encoded = concat.encode()
+
+        hash = hashlib.sha256(encoded)
+
+        return int(hash.hexdigest(),16)%(10 ** 8)
+
 
 
     def sendTestMessages(self, recipient):
@@ -92,12 +125,12 @@ class TinyWebClient:
     def initializeClient(clientId):
         client = None
         try:
-            __privateKey = Signing.PrivateKeyMethods.loadPrivateKeyClient(clientId)
-            client = TinyWebClient(privateKey=__privateKey, publicKey=Signing.PrivateKeyMethods.generatePublicKeyFromPrivate(__privateKey), clientId=clientId,LocationOn= True)
+            __privateKey = PrivateKeyMethods.loadPrivateKeyClient(clientId)
+            client = TinyWebClient(privateKey=__privateKey, publicKey=PrivateKeyMethods.generatePublicKeyFromPrivate(__privateKey), clientId=clientId,LocationOn= True)
             print("Loaded Client: " + clientId)
         except:
             client = TinyWebClient.initializeNewClient(clientId)
-            Signing.PrivateKeyMethods.savePrivateKeyClient(client.__privateKey, clientId)
+            PrivateKeyMethods.savePrivateKeyClient(client.__privateKey, clientId)
             print("Created New Client: " + clientId)
 
         return client
@@ -106,8 +139,8 @@ class TinyWebClient:
     @staticmethod
     def initializeNewClient(clientId):
         client = TinyWebClient()
-        client.__privateKey = Signing.PrivateKeyMethods.generatePrivateKey()
-        client.publicKey = Signing.PrivateKeyMethods.generatePublicKeyFromPrivate(client.__privateKey)
+        client.__privateKey = PrivateKeyMethods.generatePrivateKey()
+        client.publicKey = PrivateKeyMethods.generatePublicKeyFromPrivate(client.__privateKey)
         client.LocationOn = True
         client.clientId = clientId
 
@@ -153,7 +186,20 @@ class TinyWebClient:
 
         apiConnectorMethods.sendTransaction(data)
 
-    
+    def encryptDataForMultiplePublicKeys(self, recipientPublicKeyStrings, data):
+        return Encryption.encryptDataForMultiplePublicKeys(self.__privateKey, recipientPublicKeyStrings, data)
+
+
+    def decryptDataFromMultiEncryptedData(self, senderPublicKeyString, encryptedKeys,data, iv, ivs):
+        return Encryption.decryptDataFromMultiEncryptedData(self.__privateKey, senderPublicKeyString, encryptedKeys,data, iv, ivs)
+
+
+    def encryptDataForPublicKey(self, recipientPublicKeyString, data):
+        return Encryption.encryptDataForPublicKey(self.__privateKey, recipientPublicKeyString, data)
+
+
+    def decryptdata(self, SenderPublicKeyString, data):
+        return Encryption.decryptdata(self.__privateKey, SenderPublicKeyString, data)
 
 
     def getPeers(self):
