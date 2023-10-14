@@ -1,6 +1,5 @@
 
 from ..Serialization.Serialization import Serialization
-from ..Serialization.keySerialization import keySerialization
 import requests
 import json
 
@@ -14,7 +13,7 @@ class apiConnectorMethods:
     @staticmethod
     def getAllGroups(client):
         data = {
-            "publicKey": keySerialization.serializePublicKey(client.publicKey)
+            "publicKey": client.publicKey.encode()
         }
         url = "http://127.0.0.1:"+ str(5050 + nodeId) +"/GetAllGroups"
         data = Serialization.serializeObjToJson(data)
@@ -33,7 +32,7 @@ class apiConnectorMethods:
     @staticmethod
     def getSentMessages(client):
         data = {
-            "publicKey": keySerialization.serializePublicKey(client.publicKey)
+            "publicKey": client.publicKey.encode()
         }
         url = "http://127.0.0.1:"+ str(5050 + nodeId) +"/GetSentMessages"
         data = Serialization.serializeObjToJson(data)
@@ -52,7 +51,7 @@ class apiConnectorMethods:
     @staticmethod
     def getReceivedMessages(client):
         data = {
-            "publicKey": keySerialization.serializePublicKey(client.publicKey)
+            "publicKey": client.publicKey.encode()
         }
         url = "http://127.0.0.1:"+ str(5050 + nodeId) +"/GetReceivedMessages"
         data = Serialization.serializeObjToJson(data)

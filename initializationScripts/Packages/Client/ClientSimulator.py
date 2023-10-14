@@ -3,7 +3,7 @@ import requests
 from ..Serialization.Serialization import Serialization
 import time
 import sys
-from ..Verification.Signing import Signing
+from ..Verification.PrivateKeyMethods import Signing
 nodeId = 0
 if len(sys.argv) > 2:
     nodeId = int(sys.argv[2])

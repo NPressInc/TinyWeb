@@ -3,21 +3,15 @@
 from hashlib import new
 from Packages.Client.TinyWebClient import TinyWebClient
 
-from Packages.Serialization.keySerialization import keySerialization
-
 from Packages.Serialization.Serialization import Serialization
 
 import requests
 
-from Packages.Verification.Signing import Signing
+from Packages.Verification.PrivateKeyMethods import PrivateKeyMethods
 
 from Structures.PermissionDefinitions import PermissionDefinitions
 
 from Structures.RoleDefinitions import RoleDefinitions
-
-import time
-
-
 
 class blockChainInitialization:
 
@@ -58,20 +52,20 @@ class blockChainInitialization:
             client4 = TinyWebClient.initializeClient("4")
 
             baseGroupPublicKeys = []
-            client1PublicKeyString = keySerialization.serializePublicKey(client1.publicKey)
-            baseGroupPublicKeys.append(client1PublicKeyString)
+            client1PublicKeyBytes = client1.publicKey.encode()
+            baseGroupPublicKeys.append(client1PublicKeyBytes)
 
-            client2PublicKeyString = keySerialization.serializePublicKey(client2.publicKey)
-            baseGroupPublicKeys.append(client2PublicKeyString)
+            client2PublicKeyBytes = client2.publicKey.encode()
+            baseGroupPublicKeys.append(client2PublicKeyBytes)
 
-            client3PublicKeyString = keySerialization.serializePublicKey(client3.publicKey)
-            baseGroupPublicKeys.append(client3PublicKeyString)
+            client3PublicKeyBytes = client3.publicKey.encode()
+            baseGroupPublicKeys.append(client3PublicKeyBytes)
 
-            client4PublicKeyString = keySerialization.serializePublicKey(client4.publicKey)
+            client4PublicKeyBytes = client4.publicKey.encode()
 
             InitialgroupTransaction = blockChainInitialization.createInitialGroupTransaction(baseGroupPublicKeys,daddyClient)
 
-            FledglinggroupTransaction = blockChainInitialization.createFledglingGroupTransaction(client4PublicKeyString,daddyClient)
+            FledglinggroupTransaction = blockChainInitialization.createFledglingGroupTransaction(client4PublicKeyBytes,daddyClient)
 
             #print(groupTransaction)
             print("---------------------------------------------")
@@ -81,11 +75,11 @@ class blockChainInitialization:
 
             RoleDict = {}
 
-            RoleDict[client1PublicKeyString] = "SuperMemberRole"
+            RoleDict[client1PublicKeyBytes] = "SuperMemberRole"
 
-            RoleDict[client2PublicKeyString] = "MemberRole"
+            RoleDict[client2PublicKeyBytes] = "MemberRole"
 
-            RoleDict[client3PublicKeyString] = "SubMemberRole"
+            RoleDict[client3PublicKeyBytes] = "SubMemberRole"
 
             
 
@@ -94,7 +88,7 @@ class blockChainInitialization:
 
 
             RoleDictFledglingDict = {}
-            RoleDictFledglingDict[client1PublicKeyString] = "FledglingCommRole"
+            RoleDictFledglingDict[client1PublicKeyBytes] = "FledglingCommRole"
 
             roleAssignmentTransactions = blockChainInitialization.createRoleAssignmentDefTransactions(RoleDictFledglingDict,"fledgling", daddyClient)
 
@@ -139,16 +133,15 @@ class blockChainInitialization:
         idList = []
         for i in range(0, numberOfPeers):
             peerList.append("http://127.0.0.1:" + str(5000 + i) +"/")
-            privateKey = Signing.PrivateKeyMethods.loadPrivateKeyNode(i)
+            privateKey = PrivateKeyMethods.loadPrivateKeyNode(i)
 
-            #print({"The private key":keySerialization.serializePrivateKey(privateKey)})
-            publickey = privateKey.public_key()
-            publicKeyList.append(keySerialization.serializePublicKey(publickey))
+            publickey = PrivateKeyMethods.generatePublicKeyFromPrivate(privateKey)
+            publicKeyList.append(publickey.encode())
 
-            #print("For node: " + str(i) + " the public key is: " + keySerialization.serializePublicKey(publickey))
+            #print("For node: " + str(i) + " the public key is: " + publickey.encode())
             idList.append(i)
 
-        publicKeyString = keySerialization.serializePublicKey(daddyClient.publicKey)
+        publicKeyString = daddyClient.publicKey.encode()
 
         transaction = {
             "messageType": "PeerList",
@@ -172,7 +165,7 @@ class blockChainInitialization:
     def createRolesDefTransactions(RoleDefinitions, daddyClient):
         transactions = []
 
-        publicKeyString = keySerialization.serializePublicKey(daddyClient.publicKey)
+        publicKeyString = daddyClient.publicKey.encode()
 
         for RoleDef in RoleDefinitions:
             newRole = {
@@ -193,7 +186,7 @@ class blockChainInitialization:
     @staticmethod
     def createRoleAssignmentDefTransactions(RoleDict, groupId, daddyClient):
         transactions = []
-        publicKeyString = keySerialization.serializePublicKey(daddyClient.publicKey)
+        publicKeyString = daddyClient.publicKey.encode()
         for key in RoleDict:
             roleAssignment = {
                 "messageType": "RoleAssignment",
@@ -214,7 +207,7 @@ class blockChainInitialization:
 
         transactions = []
 
-        publicKeyString = keySerialization.serializePublicKey(daddyClient.publicKey)
+        publicKeyString = daddyClient.publicKey.encode()
 
         for Permission in PermissionDefinitions:
             newPermission = {
@@ -239,7 +232,7 @@ class blockChainInitialization:
         import time
         #groupId = Serialization.hashString(initialGroupMemebers[0] + str(time.time())) #random string to be groupID. Realized that I cant identify via hash becuase groups can change.
         groupId = "number1"
-        publicKeyString = keySerialization.serializePublicKey(daddyClient.publicKey)
+        publicKeyString = daddyClient.publicKey.encode()
         groupDef = {
                 "messageType": "GroupDescriptor",
                 "sender": publicKeyString,
@@ -259,7 +252,7 @@ class blockChainInitialization:
     def createFledglingGroupTransaction(fledglingClient, daddyClient):
         import time
         groupId = "fledgling"
-        publicKeyString = keySerialization.serializePublicKey(daddyClient.publicKey)
+        publicKeyString = daddyClient.publicKey.encode()
         groupDef = {
                 "messageType": "GroupDescriptor",
                 "sender": publicKeyString,
@@ -283,16 +276,13 @@ class blockChainInitialization:
         client3 = TinyWebClient.initializeClient("3")
 
         baseGroupPublicKeys = []
-        client1PublicKeyString = keySerialization.serializePublicKey(
-            client1.publicKey)
+        client1PublicKeyString = client1.publicKey.encode()
         baseGroupPublicKeys.append(client1PublicKeyString)
 
-        client2PublicKeyString = keySerialization.serializePublicKey(
-            client2.publicKey)
+        client2PublicKeyString = client2.publicKey.encode()
         baseGroupPublicKeys.append(client2PublicKeyString)
 
-        client3PublicKeyString = keySerialization.serializePublicKey(
-            client3.publicKey)
+        client3PublicKeyString = client3.publicKey.encode()
         baseGroupPublicKeys.append(client3PublicKeyString)
 
         

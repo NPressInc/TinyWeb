@@ -1,62 +1,79 @@
-
-from cryptography.hazmat.primitives.asymmetric import utils
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.backends import default_backend
+import nacl.utils
+from nacl.public import PrivateKey, Box
 
 from Packages.Serialization.Serialization import Serialization
+from nacl.signing import SigningKey, VerifyKey
+import json
+from nacl.exceptions import BadSignatureError
 
-class PrivateKeyMethods:
 
-    @staticmethod
-    def generatePrivateKey():
-        private_key = ec.generate_private_key(ec.SECP384R1())
-        return private_key
+class Signing:
+    class PrivateKeyMethods:
 
-    @staticmethod
-    def savePrivateKeyClient(privateKey: ec.EllipticCurvePrivateKey, clientId):
-        PKBytes = privateKey.private_bytes(
-            encoding = serialization.Encoding.PEM, 
-            format=serialization.PrivateFormat.PKCS8, 
-            encryption_algorithm = serialization.NoEncryption()
-            )
-        with open("State/private_keyClient" + str(clientId) + ".pem", 'wb') as f:
-            f.write(PKBytes)
+        @staticmethod
+        def generatePrivateKey() -> nacl.public.PrivateKey:
+            skbob = PrivateKey.generate()
+            return skbob.encode()
 
-    @staticmethod
-    def savePrivateKeyNode(privateKey: ec.EllipticCurvePrivateKey, nodeId):
-        PKBytes = privateKey.private_bytes(
-            encoding = serialization.Encoding.PEM,
-            format=serialization.PrivateFormat.PKCS8, 
-            encryption_algorithm = serialization.NoEncryption()
-            )
-        with open("State/private_keyNode" + str(nodeId) + ".pem", 'wb') as f:
-            f.write(PKBytes)
+        @staticmethod
+        def savePrivateKeyClient(privateKey: nacl.public.PrivateKey, clientId):
+            PKBytes = privateKey.encode()
+            with open("../src/State/private_keyClient" + str(clientId) + ".pem", 'wb') as f:
+                f.write(PKBytes)
 
-    @staticmethod
-    def loadPrivateKeyClient(clientId):
-        with open("State/private_keyClient" + str(clientId) + ".pem", "rb") as key_file:
-            private_key = serialization.load_pem_private_key(
-                key_file.read(),
-                password=None,
-                backend=default_backend()
-            )
-            return private_key
+        @staticmethod
+        def savePrivateKeyNode(privateKey: nacl.public.PrivateKey, nodeId):
+            PKBytes = privateKey.privateKey.encode()
+            with open("../src/State/private_keyNode" + str(nodeId) + ".pem", 'wb') as f:
+                f.write(PKBytes)
 
-    @staticmethod
-    def loadPrivateKeyNode(nodeId):
-        path = "State/private_keyNode" + str(nodeId) + ".pem"
-        #print({"filePath": path})
-        with open(path, "rb") as key_file:
-            private_key = serialization.load_pem_private_key(
-                key_file.read(),
-                password=None,
-                backend=default_backend()
-            )
-            return private_key
+        @staticmethod
+        def loadPrivateKeyClient(clientId):
+            with open("../src/State/private_keyClient" + str(clientId) + ".pem", "rb") as key_file:
+                private_key_bytes = key_file.read()
+                private_key = PrivateKey(private_key_bytes)
+                return private_key
+
+        @staticmethod
+        def loadPrivateKeyNode(nodeId):
+            path = "../src/State/private_keyNode" + str(nodeId) + ".pem"
+            print({"filePath": path})
+            with open(path, "rb") as key_file:
+                private_key_bytes = key_file.read()
+                private_key = PrivateKey(private_key_bytes)
+                return private_key
+        
+
+        @staticmethod
+        def generatePublicKeyFromPrivate(privateKey: nacl.public.PrivateKey):
+            return privateKey.public_key
+
+        
     
-
     @staticmethod
-    def generatePublicKeyFromPrivate(privateKey: ec.EllipticCurvePrivateKey):
-        return privateKey.public_key()
+    def normalSigning(private_key, data):
+        PKBytes = private_key.encode()
+
+        signing_key = SigningKey(PKBytes)
+
+        data = data.encode()
+
+        signed_message = signing_key.sign(data)
+
+        return Serialization.serializeObjToJson(signed_message)
+        
+
+    def verifyingTheSignature(public_key, signature, data):
+
+        verify_key = VerifyKey(public_key)
+        data = data.encode()
+        try:
+            # Verify the signature using the public key
+            verify_key.verify(data, signature)
+            print("Signature is valid.")
+            return True
+        except BadSignatureError:
+            print("Signature is invalid.")
+            return verify_key()
+
+     

@@ -5,9 +5,7 @@ from cryptography.hazmat.primitives import serialization
 from Packages.Client.ApiConnector import apiConnectorMethods
 
 from Packages.Serialization.Serialization import Serialization
-from ..Verification.Signing import Signing
-
-from ..Serialization.keySerialization import keySerialization
+from ..Verification.PrivateKeyMethods import Signing, PrivateKeyMethods
 
 import time
 
@@ -28,8 +26,8 @@ class TinyWebClient:
         return Signing.normalSigning(self.__privateKey, data)
 
     def sendTextMessage(self, recipient, message):
-        senderPublicKeyString = keySerialization.serializePublicKey(self.publicKey)
-        recipientKeyString = keySerialization.serializePublicKey(recipient.publicKey)
+        senderPublicKeyString = self.publicKey.encode()
+        recipientKeyString = recipient.publicKey.encode()
 
 
         transaction = {"messageType": "SMS","sender": senderPublicKeyString, "receiver":recipientKeyString, "context":message, "dateTime": time.time()}
@@ -43,8 +41,8 @@ class TinyWebClient:
         message1 = "Lets Rage"
         message2 = "No, lets age"
 
-        senderPublicKeyString = keySerialization.serializePublicKey(self.publicKey)
-        recipientKeyString = keySerialization.serializePublicKey(recipient.publicKey)
+        senderPublicKeyString = self.publicKey.encode()
+        recipientKeyString = recipient.publicKey.encode()
 
         FauxTransactionList = []
 
@@ -85,15 +83,16 @@ class TinyWebClient:
     def initializeClient(clientId):
         client = None
         try:
-            __privateKey = Signing.PrivateKeyMethods.loadPrivateKeyClient(clientId)
-            client = TinyWebClient(privateKey=__privateKey, publicKey=Signing.PrivateKeyMethods.generatePublicKeyFromPrivate(__privateKey), clientId=clientId,LocationOn= True)
+            __privateKey = PrivateKeyMethods.loadPrivateKeyClient(clientId)
+            client = TinyWebClient(privateKey=__privateKey, publicKey=PrivateKeyMethods.generatePublicKeyFromPrivate(__privateKey), clientId=clientId,LocationOn= True)
             
 
             print("Loaded Client: " + clientId)
-            print(keySerialization.serializePublicKey(Signing.PrivateKeyMethods.generatePublicKeyFromPrivate(__privateKey)))
+            print(PrivateKeyMethods.generatePublicKeyFromPrivate(__privateKey).encode())
         except:
+            print(clientId)
             client = TinyWebClient.initializeNewClient(clientId)
-            Signing.PrivateKeyMethods.savePrivateKeyClient(client.__privateKey, clientId)
+            PrivateKeyMethods.savePrivateKeyClient(client.__privateKey, clientId)
             print("Created New Client: " + clientId)
 
         return client
@@ -102,8 +101,8 @@ class TinyWebClient:
     @staticmethod
     def initializeNewClient(clientId):
         client = TinyWebClient()
-        client.__privateKey = Signing.PrivateKeyMethods.generatePrivateKey()
-        client.publicKey = Signing.PrivateKeyMethods.generatePublicKeyFromPrivate(client.__privateKey)
+        client.__privateKey = PrivateKeyMethods.generatePrivateKey()
+        client.publicKey = PrivateKeyMethods.generatePublicKeyFromPrivate(client.__privateKey)
         client.LocationOn = True
         client.clientId = clientId
 
@@ -112,8 +111,8 @@ class TinyWebClient:
 
     def seriralizeJSON(self):
         outputObject = {
-            "_privateKey": keySerialization.serializePrivateKey(self.__privateKey),
-            "publicKey": keySerialization.serializePublicKey(self.publicKey),
+            "_privateKey": self.__privateKey.encode(),
+            "publicKey": self.publicKey.encode(),
             "LocationOn": self.LocationOn,
             "clientId": self.clientId
         }
@@ -132,7 +131,7 @@ class TinyWebClient:
         groupId = Serialization.hashString(groupMembers[0] + str(time.time())) #random string to be groupID. Realized that I cant identify via hash becuase groups can change.
         groupDef = {
                 "messageType": "GroupDef",
-                "sender": keySerialization.serializePublicKey(self.publicKey),
+                "sender": self.publicKey.encode(),
                 "groupType": "People",
                 "entities": groupMembers,
                 "description": groupDesctiption,

@@ -21,7 +21,7 @@ from Packages.Serialization.keySerialization import keySerialization
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.fernet import Fernet
 
-from ..Encryption.PrivateKeyMethods import PrivateKeyMethods
+from ..Encryption.PrivateKeyMethods import Signing
 
 import base64
 
@@ -125,12 +125,12 @@ class TinyWebClient:
     def initializeClient(clientId):
         client = None
         try:
-            __privateKey = PrivateKeyMethods.loadPrivateKeyClient(clientId)
-            client = TinyWebClient(privateKey=__privateKey, publicKey=PrivateKeyMethods.generatePublicKeyFromPrivate(__privateKey), clientId=clientId,LocationOn= True)
+            __privateKey = Signing.PrivateKeyMethods.loadPrivateKeyClient(clientId)
+            client = TinyWebClient(privateKey=__privateKey, publicKey=Signing.PrivateKeyMethods.generatePublicKeyFromPrivate(__privateKey), clientId=clientId,LocationOn= True)
             print("Loaded Client: " + clientId)
         except:
             client = TinyWebClient.initializeNewClient(clientId)
-            PrivateKeyMethods.savePrivateKeyClient(client.__privateKey, clientId)
+            Signing.PrivateKeyMethods.savePrivateKeyClient(client.__privateKey, clientId)
             print("Created New Client: " + clientId)
 
         return client
@@ -139,8 +139,8 @@ class TinyWebClient:
     @staticmethod
     def initializeNewClient(clientId):
         client = TinyWebClient()
-        client.__privateKey = PrivateKeyMethods.generatePrivateKey()
-        client.publicKey = PrivateKeyMethods.generatePublicKeyFromPrivate(client.__privateKey)
+        client.__privateKey = Signing.PrivateKeyMethods.generatePrivateKey()
+        client.publicKey = Signing.PrivateKeyMethods.generatePublicKeyFromPrivate(client.__privateKey)
         client.LocationOn = True
         client.clientId = clientId
 

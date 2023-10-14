@@ -2,6 +2,7 @@ from Packages.Tests.threading import ThreadingTests
 from Packages.pBFT.node import PBFTNode
 from Packages.Communication.NodeFlaskApi import app
 from Packages.Communication.BlockChainQueryApi import BCQapp
+from Packages.Verification.Signing import PrivateKeyMethods
 
 import threading
 import time
@@ -43,6 +44,11 @@ def runNodeFlask():
 
 def runBlockChainApiFlask():
     BCQapp.run(debug=False, port=5050 + nodeId)
+
+
+if not PrivateKeyMethods.loadPrivateKeyNode(nodeId):
+    PrivateKeyMethods.savePrivateKeyNode(PrivateKeyMethods.generatePrivateKey(),nodeId)
+    
 
 #runBlockChainApiFlask
 BCQAThread = threading.Thread(target=runBlockChainApiFlask)

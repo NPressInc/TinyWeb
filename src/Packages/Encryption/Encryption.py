@@ -1,178 +1,64 @@
 
-import binascii
-from tokenize import String
-from typing_extensions import IntVar
-from cryptography.hazmat.primitives.asymmetric import utils
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.kdf.hkdf import HKDF
-
-from Packages.Serialization.Serialization import Serialization
-from Packages.Serialization.keySerialization import keySerialization
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from nacl.public import PrivateKey, PublicKey, SealedBox, Box
 import os
-
-import base64
-
+import nacl.secret
+import nacl.utils
 
 class Encryption:
 
     TWDataHeader = b"::TWDataHeader::"
 
     @staticmethod
-    def encryptDataForPublicKey(myPrivateKey, recipientPublicKeyString, data):
-
-        recipientPublicKey = keySerialization.deserializePublicKey(recipientPublicKeyString)
-
-        shared_key = myPrivateKey.exchange(
-            ec.ECDH(), recipientPublicKey)
+    def encryptDataForPublicKey(myPrivateKey, recipient_pub_key, data):
         
-        key = Encryption.getDigest(shared_key)
+        bob_box = Box(myPrivateKey, recipient_pub_key)
 
-        encrypted, iv = Encryption.AESEncrypt(key, data)
+        encrypted = bob_box.encrypt(data)
 
-        return encrypted, iv
-
+        return encrypted
 
 
     @staticmethod
-    def decryptdataFromPrivateKey(myPrivateKey, SenderPublicKeyString, data, iv):
+    def decryptdataFromPrivateKey(myPrivateKey, sender_pub_key, data):
 
-        SenderPublicKey = keySerialization.deserializePublicKey(SenderPublicKeyString)
+        box = Box(myPrivateKey, sender_pub_key)
 
-        same_shared_key = myPrivateKey.exchange(
-            ec.ECDH(), SenderPublicKey)
-        # Perform key derivation.
-        key = Encryption.getDigest(same_shared_key)
-
-        res = Encryption.AESDecrypt(key, data, iv)
-
-        if res == None:
-            print("Invalid Key")
-        else:
-            return res
+        return box.decrypt(data)
 
     
     @staticmethod
-    def encryptDataForMultiplePublicKeys(privateKey, recipientPublicKeyStrings, data, generatedKey = None):
+    def encryptDataForMultiplePublicKeys(myPrivateKey, recipient_public_keys, data, generatedKey = None):
 
         encryptedKeys = []
-        ivs = []
 
         if generatedKey == None:
-            generatedKey = os.urandom(32)
-
+            generatedKey = nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE)
         
+        box = nacl.secret.SecretBox(generatedKey)
 
-        encryptedData, MasterIv  = Encryption.AESEncrypt(generatedKey,data)
+        encryptedData  = box.encrypt(data)
 
-        for recipientPublicKeyString in recipientPublicKeyStrings:
-
-            recipientPublicKey = keySerialization.deserializePublicKey(recipientPublicKeyString)
-            shared_key = privateKey.exchange(
-                ec.ECDH(), recipientPublicKey)
-            # Perform key derivation.
-            key = Encryption.getDigest(shared_key)
-
+        for recipient_public_key in recipient_public_keys:
             
-
-            cipherText, iv = Encryption.AESEncrypt(key, generatedKey)
-            
-            encryptedKeys.append(cipherText)
-            ivs.append(iv)
+            encryptedKeys.append(Encryption.encryptDataForPublicKey(myPrivateKey,recipient_public_key,generatedKey))
         
-        return {"EncryptedData": encryptedData, "iv": MasterIv, "EncryptedKeys": encryptedKeys, "ivs": ivs}
+        return {"EncryptedData": encryptedData, "EncryptedKeys": encryptedKeys}
+
     @staticmethod
-    def decryptDataFromMultiEncryptedData(myPrivateKey, senderPublicKeyString, encryptedKeys,data, iv, ivs):
-
-        SenderPublicKey = keySerialization.deserializePublicKey(senderPublicKeyString)
-        same_shared_key = myPrivateKey.exchange(
-            ec.ECDH(), SenderPublicKey)
+    def decryptDataFromMultiEncryptedData(myPrivateKey, sender_public_key, encryptedKeys,data):
         # Perform key derivation.
-        key = Encryption.getDigest(same_shared_key)
-
-        for i in range(len(encryptedKeys)):
-            decryptedKey = Encryption.AESDecrypt(key, encryptedKeys[i], ivs[i])
-            if decryptedKey == None:
-                continue
-            else:
+        decryptedKey = None
+        for key in encryptedKeys:
+            try:
+                decryptedKey = Encryption.decryptdataFromPrivateKey(myPrivateKey, sender_public_key, key)
                 break
+            except:
+                continue
+
         if decryptedKey == None:
             raise Exception("No Encrypted Keys Matched. No access given")
 
-        finalData = Encryption.AESDecrypt(decryptedKey, data, iv)
+        box = nacl.secret.SecretBox(decryptedKey)
+        finalData = box.decrypt(data)
 
         return finalData
-
-    @staticmethod
-    def AESEncrypt(key: bytearray, data: String):
-        iv = os.urandom(16)
-        data = Encryption.addTWHeader(data)
-        cipher = Cipher(algorithms.AES(key), modes.CTR(iv), backend=default_backend())
-        encryptor = cipher.encryptor()
-        ciphertext = encryptor.update(data) + encryptor.finalize()
-        return (ciphertext, iv)
-        
-        
-    @staticmethod
-    def AESDecrypt(key: bytearray, data: bytearray, iv: bytearray):
-        cipher = Cipher(algorithms.AES(key), modes.CTR(iv), backend=default_backend())
-        decryptor = cipher.decryptor()
-        res = decryptor.update(data) + decryptor.finalize()
-        if Encryption.checkForHeader(res):
-            res = Encryption.removeTWHeader(res)
-        else:
-            return None
-        return res
-       
-    @staticmethod
-    def checkForHeader(data):
-        if len(data) > 16:
-            if data[:16] == Encryption.TWDataHeader:
-                return True
-        return False
-
-    @staticmethod
-    def removeTWHeader(data):
-        if len(data) > 16:
-            return data[16:]
-        else:
-            raise Exception("Data Length not sufficient")
-
-
-    @staticmethod
-    def addTWHeader(data):
-        return Encryption.TWDataHeader + data
-
-
-    @staticmethod
-    def getDigest(inputBytes: bytearray):
-        kdf = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt="null".encode("utf-8"),
-            iterations=15000,
-        )
-        res = kdf.derive(inputBytes)
-        return res
-
-    @staticmethod
-    def testEncrypt():
-        data = b"hellofdsaafsdffasdf"
-
-        print(data)
-
-        digest = Encryption.getDigest(b"secret1")
-
-        fakedigest = Encryption.getDigest(b"secret21")
-
-        ciphertext, iv = Encryption.AESEncrypt(digest, data)
-
-        print({"encData": ciphertext, "iv": iv})
-
-        print(Encryption.AESDecrypt(key=fakedigest, data=ciphertext, iv=iv))
-
-
