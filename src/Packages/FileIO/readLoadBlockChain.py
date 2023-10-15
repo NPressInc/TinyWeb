@@ -1,6 +1,6 @@
 
 
-from ..structures.BlockChain.BlockChain import BlockChain
+from ..Structures.BlockChain.BlockChain import BlockChain
 from ..Serialization.Serialization import Serialization
 import brotli
 

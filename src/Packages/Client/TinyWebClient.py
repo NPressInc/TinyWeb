@@ -7,7 +7,7 @@ from tokenize import Double
 from Packages.Client.ApiConnector import apiConnectorMethods
 
 from Packages.Serialization.Serialization import Serialization
-from ..Verification.Signing import Signing
+from ..Verification.Signing import Signing, PrivateKeyMethods
 
 from ..Serialization.keySerialization import keySerialization
 from ..Encryption.Encryption import Encryption
@@ -18,12 +18,6 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
 from Packages.Serialization.Serialization import Serialization
 from Packages.Serialization.keySerialization import keySerialization
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.fernet import Fernet
-
-from ..Encryption.PrivateKeyMethods import Signing
-
-import base64
 
 import time
 
@@ -40,14 +34,13 @@ class TinyWebClient:
         self.LocationOn = LocationOn
     
 
-    def signData(self, data):
+    def signData(self, data) -> str:
         return Signing.normalSigning(self.__privateKey, data)
-
-
+    
 
     def sendTextMessage(self, recipient, message):
-        senderPublicKeyString = keySerialization.serializePublicKey(self.publicKey)
-        recipientKeyString = keySerialization.serializePublicKey(recipient.publicKey)
+        senderPublicKeyString = keySerialization.serializePublicKeyToString(self.publicKey)
+        recipientKeyString = keySerialization.serializePublicKeyToString(recipient.publicKey)
         groupId = ""
         if recipient.clientId == "4" or self.clientId == "4":
             
@@ -83,8 +76,8 @@ class TinyWebClient:
         message1 = "Lets Rage"
         message2 = "No, lets age"
 
-        senderPublicKeyString = keySerialization.serializePublicKey(self.publicKey)
-        recipientKeyString = keySerialization.serializePublicKey(recipient.publicKey)
+        senderPublicKeyString = keySerialization.serializePublicKeyToString(self.publicKey)
+        recipientKeyString = keySerialization.serializePublicKeyToString(recipient.publicKey)
 
         FauxTransactionList = []
 
@@ -125,12 +118,12 @@ class TinyWebClient:
     def initializeClient(clientId):
         client = None
         try:
-            __privateKey = Signing.PrivateKeyMethods.loadPrivateKeyClient(clientId)
-            client = TinyWebClient(privateKey=__privateKey, publicKey=Signing.PrivateKeyMethods.generatePublicKeyFromPrivate(__privateKey), clientId=clientId,LocationOn= True)
+            __privateKey = PrivateKeyMethods.loadPrivateKeyClient(clientId)
+            client = TinyWebClient(privateKey=__privateKey, publicKey=PrivateKeyMethods.generatePublicKeyFromPrivate(__privateKey), clientId=clientId,LocationOn= True)
             print("Loaded Client: " + clientId)
         except:
             client = TinyWebClient.initializeNewClient(clientId)
-            Signing.PrivateKeyMethods.savePrivateKeyClient(client.__privateKey, clientId)
+            PrivateKeyMethods.savePrivateKeyClient(client.__privateKey, clientId)
             print("Created New Client: " + clientId)
 
         return client
@@ -139,8 +132,8 @@ class TinyWebClient:
     @staticmethod
     def initializeNewClient(clientId):
         client = TinyWebClient()
-        client.__privateKey = Signing.PrivateKeyMethods.generatePrivateKey()
-        client.publicKey = Signing.PrivateKeyMethods.generatePublicKeyFromPrivate(client.__privateKey)
+        client.__privateKey = PrivateKeyMethods.generatePrivateKey()
+        client.publicKey = PrivateKeyMethods.generatePublicKeyFromPrivate(client.__privateKey)
         client.LocationOn = True
         client.clientId = clientId
 
@@ -149,8 +142,8 @@ class TinyWebClient:
 
     def seriralizeJSON(self):
         outputObject = {
-            "_privateKey": keySerialization.serializePrivateKey(self.__privateKey),
-            "publicKey": keySerialization.serializePublicKey(self.publicKey),
+            "_privateKey": keySerialization.serializePrivateKey(self.__privateKey).decode("utf-8"),
+            "publicKey": keySerialization.serializePublicKeyToString(self.publicKey).decode("utf-8"),
             "LocationOn": self.LocationOn,
             "clientId": self.clientId
         }
@@ -169,7 +162,7 @@ class TinyWebClient:
         groupId = Serialization.hashString(groupMembers[0] + str(time.time())) #random string to be groupID. Realized that I cant identify via hash becuase groups can change.
         groupDef = {
                 "messageType": "GroupDescriptor",
-                "sender": keySerialization.serializePublicKey(self.publicKey),
+                "sender": keySerialization.serializePublicKeyToString(self.publicKey),
                 "groupType": "People",
                 "entities": groupMembers,
                 "description": groupDesctiption,

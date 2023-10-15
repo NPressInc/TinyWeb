@@ -2,8 +2,8 @@ from Packages.Encryption.Encryption import Encryption
 from flask import Flask, request
 import json
 import base64
-from Packages.structures.BlockChain.Parsers.BlockParser import BlockParser
-from Packages.structures.BlockChain.Parsers.BlockchainParser import BlockchainParser
+from Packages.Structures.BlockChain.Parsers.BlockParser import BlockParser
+from Packages.Structures.BlockChain.Parsers.BlockchainParser import BlockchainParser
 from ..Serialization.Serialization import Serialization
 
 from ..pBFT.node import PBFTNode

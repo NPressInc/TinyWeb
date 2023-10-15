@@ -4,7 +4,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec
 
 
-from ..structures.BlockChain.Parsers.BlockchainParser import BlockchainParser
+from ..Structures.BlockChain.Parsers.BlockchainParser import BlockchainParser
 
 from ..Verification.PermissionsEditor import PermissionsEditor
 

@@ -7,11 +7,10 @@ from Packages.Serialization.Serialization import Serialization
 
 import requests
 
-from Packages.Verification.PrivateKeyMethods import PrivateKeyMethods
-
-from Structures.PermissionDefinitions import PermissionDefinitions
-
-from Structures.RoleDefinitions import RoleDefinitions
+from Packages.Verification.Signing import PrivateKeyMethods
+from Packages.Structures.PermissionDefinitions import PermissionDefinitions
+from Packages.Structures.RoleDefinitions import RoleDefinitions
+from Packages.Structures.BlockChain.Transaction import Transaction
 
 class blockChainInitialization:
 
@@ -115,9 +114,9 @@ class blockChainInitialization:
                 blockChainInitialization.sendTransaction(ts, 0)
 
     @staticmethod
-    def sendTransaction(transactionObject, nodeId):
+    def sendTransaction(transactionObject: Transaction, nodeId):
         url = "http://127.0.0.1:"+ str(5000 + nodeId) +"/Transaction"
-        data = Serialization.serializeObjToJson(transactionObject)
+        data = transactionObject.serializeJson()
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         r = requests.post(url, data=data, headers=headers)
         if r.status_code == requests.codes.ok:
@@ -127,7 +126,7 @@ class blockChainInitialization:
 
 
     @staticmethod   
-    def initializePeerListForTesting(daddyClient, numberOfPeers):
+    def initializePeerListForTesting(daddyClient: TinyWebClient, numberOfPeers) -> Transaction:
         peerList = []
         publicKeyList = []
         idList = []
@@ -136,30 +135,28 @@ class blockChainInitialization:
             privateKey = PrivateKeyMethods.loadPrivateKeyNode(i)
 
             publickey = PrivateKeyMethods.generatePublicKeyFromPrivate(privateKey)
-            publicKeyList.append(publickey.encode())
+            publicKeyList.append(publickey)
 
             #print("For node: " + str(i) + " the public key is: " + publickey.encode())
             idList.append(i)
 
-        publicKeyString = daddyClient.publicKey.encode()
+        publicKey = daddyClient.publicKey
 
-        transaction = {
-            "messageType": "PeerList",
-            "peers": peerList,
-            "publicKeys": publicKeyList,
-            "ids": idList,
-            "sender": publicKeyString
-        }
+        transaction = Transaction(
+            messageType="PeerList", 
+            peers=peerList, 
+            publicKeys=publicKeyList, 
+            ids=idList,
+            sender=publicKey
+        )
 
-        hash = Serialization.hashObject(transaction)
+        hash = transaction.hash()
 
-        signature = daddyClient.signData(hash)
+        signatureStr = daddyClient.signData(hash)
 
-        data = {
-            "signature": signature,
-            "transaction": transaction
-        }
-        return data
+        transaction.signatureStr = signatureStr
+
+        return transaction
 
     @staticmethod
     def createRolesDefTransactions(RoleDefinitions, daddyClient):

@@ -9,13 +9,13 @@ import random
 
 from Packages.Serialization.Serialization import Serialization
 from Packages.Serialization.keySerialization import keySerialization
-from Packages.structures.BlockChain.Parsers.BlockchainParser import BlockchainParser
-from ..structures.BlockChain.BlockChain import BlockChain
-from ..structures.BlockChain.Block import Block
+from Packages.Structures.BlockChain.Parsers.BlockchainParser import BlockchainParser
+from ..Structures.BlockChain.BlockChain import BlockChain
+from ..Structures.BlockChain.Block import Block
 from ..Verification.BlockVerification import BlockVerification
 from ..FileIO.readLoadBlockChain import BlockChainReadWrite
 from ..Client.TinyWebClient import TinyWebClient
-from ..Verification.Signing import Signing
+from ..Verification.Signing import Signing, PrivateKeyMethods
 
 
 import sys
@@ -44,7 +44,7 @@ class PBFTNode:
 
         PBFTNode.node = node
 
-        print({"in Node top, public Key": keySerialization.serializePublicKey(PBFTNode.node.publicKey)})
+        print({"in Node top, public Key": keySerialization.serializePublicKeyToString(PBFTNode.node.publicKey)})
 
 
         #BlockChainReadWrite.saveBlockChainToFile(node.blockChain)
@@ -211,14 +211,14 @@ class PBFTNode:
     def initializeKeys(self):
         client = None
         try:
-            self.__privateKey = Signing.PrivateKeyMethods.loadPrivateKeyNode(self.id)
+            self.__privateKey = PrivateKeyMethods.loadPrivateKeyNode(self.id)
             #print({"The private key":keySerialization.serializePrivateKey(self.__privateKey)})
-            self.publicKey=Signing.PrivateKeyMethods.generatePublicKeyFromPrivate(self.__privateKey)
+            self.publicKey=PrivateKeyMethods.generatePublicKeyFromPrivate(self.__privateKey)
             print("Loaded Client: " + str(self.id))
         except:
-            self.__privateKey = Signing.PrivateKeyMethods.generatePrivateKey()
-            self.publicKey = Signing.PrivateKeyMethods.generatePublicKeyFromPrivate(self.__privateKey)
-            Signing.PrivateKeyMethods.savePrivateKeyNode(self.__privateKey, self.id)
+            self.__privateKey = PrivateKeyMethods.generatePrivateKey()
+            self.publicKey = PrivateKeyMethods.generatePublicKeyFromPrivate(self.__privateKey)
+            PrivateKeyMethods.savePrivateKeyNode(self.__privateKey, self.id)
             print("Created New Node: " + str(self.id))
 
         return client
@@ -227,7 +227,7 @@ class PBFTNode:
         signature = Signing.normalSigning(self.__privateKey, str(proposerId))
         data = {
             "proposerId": str(proposerId),
-            "sender": keySerialization.serializePublicKey(self.publicKey),
+            "sender": keySerialization.serializePublicKeyToString(self.publicKey),
             "signature":signature
         }
         data = Serialization.serializeObjToJson(data)
@@ -253,7 +253,7 @@ class PBFTNode:
         hashes = {}
         for peer in self.peers:
             url = peer + "BlockChainLastHash"
-            publicKeyString = keySerialization.serializePublicKey(self.publicKey)
+            publicKeyString = keySerialization.serializePublicKeyToString(self.publicKey)
             signature = Signing.normalSigning(self.__privateKey, str(publicKeyString))
             data = {
                 "sender": publicKeyString,
@@ -305,7 +305,7 @@ class PBFTNode:
     def getPendingTransactions(self, peer):
         url = peer + "GetPendingTransactions"
 
-        publicKeyString = keySerialization.serializePublicKey(self.publicKey)
+        publicKeyString = keySerialization.serializePublicKeyToString(self.publicKey)
         signature = Signing.normalSigning(self.__privateKey, str(publicKeyString))
         data = {
             "sender": publicKeyString,
@@ -341,7 +341,7 @@ class PBFTNode:
         try:
             url = peer + "GetBlockChainLength"
         
-            publicKeyString = keySerialization.serializePublicKey(self.publicKey)
+            publicKeyString = keySerialization.serializePublicKeyToString(self.publicKey)
             signature = Signing.normalSigning(self.__privateKey, str(publicKeyString))
             data = {
                 "sender": publicKeyString,
@@ -403,7 +403,7 @@ class PBFTNode:
         signature = Signing.normalSigning(self.__privateKey, lastHash)
         data = {
             "lastHash": lastHash,
-            "sender": keySerialization.serializePublicKey(self.publicKey),
+            "sender": keySerialization.serializePublicKeyToString(self.publicKey),
             "signature": signature
         }
         data = Serialization.serializeObjToJson(data)
@@ -454,9 +454,9 @@ class PBFTNode:
         print("Requesting blockchain from longest Peer")
 
         url = peer + "RequestEntireBlockchain"
-        signature = Signing.normalSigning(self.__privateKey, keySerialization.serializePublicKey(self.publicKey))
+        signature = Signing.normalSigning(self.__privateKey, keySerialization.serializePublicKeyToString(self.publicKey))
         data = {
-            "sender": keySerialization.serializePublicKey(self.publicKey),
+            "sender": keySerialization.serializePublicKeyToString(self.publicKey),
             "signature": signature
         }
 
@@ -482,7 +482,7 @@ class PBFTNode:
             signature = jsn['signature']
 
             try:
-                Signing.verifyingTheSignature(keySerialization.deserializePublicKey(sender), signature, recievedHash)
+                Signing.verifyingTheSignature(keySerialization.deserializePublicKeyFromString(sender), signature, recievedHash)
             except:
                 return json.dumps({"response": "KeyError"})
 
@@ -499,7 +499,7 @@ class PBFTNode:
         import requests
         #try:
         url = "http://127.0.0.1:" + str(5000 + nodeId) + "/AddNewBlockForSingularNode"
-        publicKeyString =  keySerialization.serializePublicKey(self.publicKey)
+        publicKeyString =  keySerialization.serializePublicKeyToString(self.publicKey)
         signature = Signing.normalSigning(self.__privateKey, publicKeyString)
         data = {
             "sender": publicKeyString,
@@ -563,7 +563,7 @@ class PBFTNode:
             data = {
                 "blockData":blockString,
                 "blockHash": blockHash,
-                "sender": keySerialization.serializePublicKey(self.publicKey),
+                "sender": keySerialization.serializePublicKeyToString(self.publicKey),
                 "signature": signature
             }
             data = Serialization.serializeObjToJson(data)
@@ -610,7 +610,7 @@ class PBFTNode:
             data = {
                 "blockChain":blockChainString,
                 "blockChainHash": hash,
-                "sender": keySerialization.serializePublicKey(self.publicKey),
+                "sender": keySerialization.serializePublicKeyToString(self.publicKey),
                 "signature": signature
             }
             data = Serialization.serializeObjToJson(data)
@@ -643,7 +643,7 @@ class PBFTNode:
             signature = Signing.normalSigning(self.__privateKey, blockHash)
             data = {
                 "blockData":blockString,
-                "sender": keySerialization.serializePublicKey(self.publicKey),
+                "sender": keySerialization.serializePublicKeyToString(self.publicKey),
                 "signature": signature,
                 "blockHash": blockHash
             }
@@ -685,7 +685,7 @@ class PBFTNode:
             signature = Signing.normalSigning(self.__privateKey, blockHash)
             data = {
                 "blockData":blockString,
-                "sender": keySerialization.serializePublicKey(self.publicKey),
+                "sender": keySerialization.serializePublicKeyToString(self.publicKey),
                 "signature": signature,
                 "blockHash": blockHash
             }
@@ -713,7 +713,7 @@ class PBFTNode:
             signature = Signing.normalSigning(self.__privateKey, blockHash)
             data = {
                 "blockData": blockString,
-                "sender": keySerialization.serializePublicKey(self.publicKey),
+                "sender": keySerialization.serializePublicKeyToString(self.publicKey),
                 "signature": signature,
                 "blockHash": blockHash
             }
@@ -758,7 +758,7 @@ class PBFTNode:
     def configureBlockChainForFirstUse():
 
         client1 = TinyWebClient.initializeClient("0")
-        client1PublicKeyString = keySerialization.serializePublicKey(client1.publicKey)
+        client1PublicKeyString = keySerialization.serializePublicKeyToString(client1.publicKey)
         blockChain = BlockChain(creatorPublicKey=client1PublicKeyString)
 
         return blockChain

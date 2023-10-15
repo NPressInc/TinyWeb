@@ -6,7 +6,7 @@ from Packages.Client.ClientSimulator import ClientSimulator
 
 from Packages.Client.ApiConnector import apiConnectorMethods
 
-from Packages.structures.BlockChain.Parsers.BlockchainParser import BlockchainParser
+from Packages.Structures.BlockChain.Parsers.BlockchainParser import BlockchainParser
 
 from Packages.Encryption.Encryption import Encryption
 
@@ -52,52 +52,52 @@ def testMessageSendingFledgeling():
 
 
 def testConvsersationIdGenerator():
-    print(client1.getConversationIdFromKeys(keySerialization.serializePublicKey(client1.publicKey), keySerialization.serializePublicKey(client2.publicKey)))
+    print(client1.getConversationIdFromKeys(keySerialization.serializePublicKeyToString(client1.publicKey), keySerialization.serializePublicKeyToString(client2.publicKey)))
     print("Here")
-    print(client1.getConversationIdFromKeys(keySerialization.serializePublicKey(client2.publicKey), keySerialization.serializePublicKey(client2.publicKey)))
+    print(client1.getConversationIdFromKeys(keySerialization.serializePublicKeyToString(client2.publicKey), keySerialization.serializePublicKeyToString(client2.publicKey)))
     print("Here")
-    print(client1.getConversationIdFromKeys(keySerialization.serializePublicKey(client3.publicKey), keySerialization.serializePublicKey(client2.publicKey)))
+    print(client1.getConversationIdFromKeys(keySerialization.serializePublicKeyToString(client3.publicKey), keySerialization.serializePublicKeyToString(client2.publicKey)))
     print("Here")
-    print(client1.getConversationIdFromKeys(keySerialization.serializePublicKey(client4.publicKey), keySerialization.serializePublicKey(client2.publicKey)))
+    print(client1.getConversationIdFromKeys(keySerialization.serializePublicKeyToString(client4.publicKey), keySerialization.serializePublicKeyToString(client2.publicKey)))
     print("Here")
-    print(client1.getConversationIdFromKeys(keySerialization.serializePublicKey(client5.publicKey), keySerialization.serializePublicKey(client2.publicKey)))
+    print(client1.getConversationIdFromKeys(keySerialization.serializePublicKeyToString(client5.publicKey), keySerialization.serializePublicKeyToString(client2.publicKey)))
     print("Here")
-    print(client1.getConversationIdFromKeys(keySerialization.serializePublicKey(client1.publicKey), keySerialization.serializePublicKey(client3.publicKey)))
+    print(client1.getConversationIdFromKeys(keySerialization.serializePublicKeyToString(client1.publicKey), keySerialization.serializePublicKeyToString(client3.publicKey)))
 
 
 
 def testMultiEncrypt():
 
     clientsWithAccess = [
-        keySerialization.serializePublicKey(client2.publicKey),
-        keySerialization.serializePublicKey(client3.publicKey),
-        keySerialization.serializePublicKey(client4.publicKey),
-        keySerialization.serializePublicKey(client1.publicKey),
+        keySerialization.serializePublicKeyToString(client2.publicKey),
+        keySerialization.serializePublicKeyToString(client3.publicKey),
+        keySerialization.serializePublicKeyToString(client4.publicKey),
+        keySerialization.serializePublicKeyToString(client1.publicKey),
     ]
 
 
     encryptedData = client1.encryptDataForMultiplePublicKeys(clientsWithAccess, b"Hello")
     print(encryptedData)
 
-    decryptedData = client1.decryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"], encryptedData["iv"],encryptedData["ivs"])
+    decryptedData = client1.decryptDataFromMultiEncryptedData(keySerialization.serializePublicKeyToString(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"], encryptedData["iv"],encryptedData["ivs"])
 
     print({"decrypted1":decryptedData } )
 
-    decryptedData = client2.decryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"], encryptedData["iv"],encryptedData["ivs"])
+    decryptedData = client2.decryptDataFromMultiEncryptedData(keySerialization.serializePublicKeyToString(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"], encryptedData["iv"],encryptedData["ivs"])
 
 
     print({"decrypted2":decryptedData } )
 
-    decryptedData = client3.decryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"], encryptedData["iv"],encryptedData["ivs"])
+    decryptedData = client3.decryptDataFromMultiEncryptedData(keySerialization.serializePublicKeyToString(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"], encryptedData["iv"],encryptedData["ivs"])
 
 
     print({"decrypted3":decryptedData } )
 
-    decryptedData = client4.decryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"], encryptedData["iv"],encryptedData["ivs"])
+    decryptedData = client4.decryptDataFromMultiEncryptedData(keySerialization.serializePublicKeyToString(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"], encryptedData["iv"],encryptedData["ivs"])
 
     print({"decrypted4":decryptedData } )
 
-    decryptedData = client5.decryptDataFromMultiEncryptedData(keySerialization.serializePublicKey(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"], encryptedData["iv"],encryptedData["ivs"])
+    decryptedData = client5.decryptDataFromMultiEncryptedData(keySerialization.serializePublicKeyToString(client1.publicKey),encryptedData["EncryptedKeys"], encryptedData["EncryptedData"], encryptedData["iv"],encryptedData["ivs"])
 
     print({"decrypted5":decryptedData } )
 
@@ -106,10 +106,10 @@ def testMultiEncrypt():
 
 
 def creatGroup():
-    serializedPublicKey1 = keySerialization.serializePublicKey(client1.publicKey)
-    serializedPublicKey2 = keySerialization.serializePublicKey(client2.publicKey)
-    serializedPublicKey3 = keySerialization.serializePublicKey(client3.publicKey)
-    serializedPublicKey4 = keySerialization.serializePublicKey(client4.publicKey)
+    serializedPublicKey1 = keySerialization.serializePublicKeyToString(client1.publicKey)
+    serializedPublicKey2 = keySerialization.serializePublicKeyToString(client2.publicKey)
+    serializedPublicKey3 = keySerialization.serializePublicKeyToString(client3.publicKey)
+    serializedPublicKey4 = keySerialization.serializePublicKeyToString(client4.publicKey)
 
     publicKeys = []
 

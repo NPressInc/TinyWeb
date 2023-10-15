@@ -3,14 +3,14 @@ from flask import Flask, request, jsonify
 from os import path
 
 from Packages.Serialization.keySerialization import keySerialization
-from Packages.structures.BlockChain.Parsers.BlockchainParser import BlockchainParser
+from Packages.Structures.BlockChain.Parsers.BlockchainParser import BlockchainParser
 
-
+from Packages.Structures.BlockChain.Transaction import Transaction
 from ..Serialization.Serialization import Serialization
 
-from ..structures.BlockChain.Block import Block
+from ..Structures.BlockChain.Block import Block
 
-from ..structures.BlockChain.BlockChain import BlockChain
+from ..Structures.BlockChain.BlockChain import BlockChain
 
 from ..pBFT.node import PBFTNode
 
@@ -60,29 +60,29 @@ def hello_world():
 
 
 @app.route("/Transaction", methods=['POST'])
-def Transaction():
+def get_transaction():
     jsn = request.get_json()
 
-    sender = jsn['transaction']['sender']
+    print(jsn)
+    transaction = Transaction.loadJson(jsn)
 
-    signature = jsn['signature']
-
-    transaction = jsn['transaction']
-
-    transactionHash = Serialization.hashObject(transaction)
-    pubKey = keySerialization.deserializePublicKey(sender)
-
+    transactionHash = transaction.hash()
     
-
     if transactionHash in MessageQueues.transactionQueue:
         return json.dumps({"response": "Transaction Already Queued"})
+    
+    print("------------")
+    print(transaction.sender)
+    print("------------")
+    print(BlockchainParser.getAllUsers(PBFTNode.node.blockChain))
+    print("------------")
 
-    if not(sender in BlockchainParser.getAllUsers(PBFTNode.node.blockChain)):
-        print({"userNot Verified publicKey": sender})
+    if not(transaction.sender in BlockchainParser.getAllUsers(PBFTNode.node.blockChain)):
+        print({"userNot Verified publicKey": transaction.sender})
         return json.dumps({"response": "User Not Verified"})
 
     try:
-        Signing.verifyingTheSignature(pubKey, signature,transactionHash)
+        Signing.verifyingTheSignature(transaction.sender, transaction.signature,transactionHash)
     except:
         return json.dumps({"response": "KeyError"})
 
@@ -138,7 +138,7 @@ def TransactionInternal():
     hash = Serialization.hashObject(transaction)
 
     try:
-        Signing.verifyingTheSignature(keySerialization.deserializePublicKey(proposer), signature, hash)
+        Signing.verifyingTheSignature(keySerialization.deserializePublicKeyFromString(proposer), signature, hash)
         
     except:
         return json.dumps({"response": "KeyError"})
@@ -170,14 +170,14 @@ def NewBlock():
         #print({"Proposing Block Pub Key": proposer})
         #print(PBFTNode.node.fullPeerInfo)
         idIpInfo = PBFTNode.node.fullPeerInfo[proposer]
-        Signing.verifyingTheSignature(keySerialization.deserializePublicKey(proposer), signature, recievedHash)
+        Signing.verifyingTheSignature(keySerialization.deserializePublicKeyFromString(proposer), signature, recievedHash)
         
     except:
         return json.dumps({"response": "KeyError"})
 
     blockString = json.dumps(blockjsn, indent=4, sort_keys=True)
 
-    myPublicKey = keySerialization.serializePublicKey(PBFTNode.node.publicKey)
+    myPublicKey = keySerialization.serializePublicKeyToString(PBFTNode.node.publicKey)
     
 
     if recievedHash in MessageQueues.PendingBlockDict or recievedHash in MessageQueues.CommitedBlockDict:
@@ -230,7 +230,7 @@ def VerificationVote():
 
     try:
         idIpInfo = PBFTNode.node.fullPeerInfo[proposer]
-        Signing.verifyingTheSignature(keySerialization.deserializePublicKey(proposer), signature, recievedHash)
+        Signing.verifyingTheSignature(keySerialization.deserializePublicKeyFromString(proposer), signature, recievedHash)
         
     except:
         return json.dumps({"response": "KeyError"})
@@ -312,7 +312,7 @@ def CommitVote():
 
     try:
         idIpInfo = PBFTNode.node.fullPeerInfo[proposer]
-        Signing.verifyingTheSignature(keySerialization.deserializePublicKey(proposer), signature, recievedHash)
+        Signing.verifyingTheSignature(keySerialization.deserializePublicKeyFromString(proposer), signature, recievedHash)
         
     except:
         return json.dumps({"response": "KeyError"})
@@ -429,7 +429,7 @@ def NewRound():
 
     try:
         idIpInfo = PBFTNode.node.fullPeerInfo[proposer]
-        Signing.verifyingTheSignature(keySerialization.deserializePublicKey(proposer), signature, recievedHash)
+        Signing.verifyingTheSignature(keySerialization.deserializePublicKeyFromString(proposer), signature, recievedHash)
         
     except:
         return json.dumps({"response": "KeyError"})
@@ -601,7 +601,7 @@ def BlockChainLastHash():
     idIpInfo = {}
     try:
 
-        Signing.verifyingTheSignature(keySerialization.deserializePublicKey(proposer), signature, proposer)
+        Signing.verifyingTheSignature(keySerialization.deserializePublicKeyFromString(proposer), signature, proposer)
         
     except:
         return json.dumps({"response": "KeyError"})
@@ -617,7 +617,7 @@ def GetPendingTransactions():
 
     idIpInfo = {}
     try:
-        Signing.verifyingTheSignature(keySerialization.deserializePublicKey(proposer), signature, proposer)
+        Signing.verifyingTheSignature(keySerialization.deserializePublicKeyFromString(proposer), signature, proposer)
     except:
         return json.dumps({"response": "KeyError"})
     return json.dumps({"pendingTransactions": MessageQueues.transactionQueue})
@@ -633,7 +633,7 @@ def GetBlockChainLength():
     signature = jsn['signature']
 
     try:
-        Signing.verifyingTheSignature(keySerialization.deserializePublicKey(proposer), signature, proposer)
+        Signing.verifyingTheSignature(keySerialization.deserializePublicKeyFromString(proposer), signature, proposer)
         
     except:
         return json.dumps({"response": "KeyError"})
@@ -662,7 +662,7 @@ def MissingBlockRequeset():
 
 
     try:
-        Signing.verifyingTheSignature(keySerialization.deserializePublicKey(proposer), signature, lastHash)
+        Signing.verifyingTheSignature(keySerialization.deserializePublicKeyFromString(proposer), signature, lastHash)
         
     except:
         return json.dumps({"response": "KeyError"})
@@ -707,7 +707,7 @@ def SendNewBlockChain():
 
     try:
         idIpInfo = PBFTNode.node.fullPeerInfo[proposer]
-        Signing.verifyingTheSignature(keySerialization.deserializePublicKey(proposer), signature, recievedHash)
+        Signing.verifyingTheSignature(keySerialization.deserializePublicKeyFromString(proposer), signature, recievedHash)
         
     except:
         return json.dumps({"response": "KeyError"})
@@ -722,7 +722,7 @@ def SendNewBlockChain():
 
     
 
-    if keySerialization.serializePublicKey(PBFTNode.node.publicKey) == proposer:
+    if keySerialization.serializePublicKeyToString(PBFTNode.node.publicKey) == proposer:
         return json.dumps({"response": "Will "})
 
     
@@ -743,7 +743,7 @@ def RequestEntireBlockchain():
     idIpInfo = {}
 
     try:
-        Signing.verifyingTheSignature(keySerialization.deserializePublicKey(proposer), signature, proposer)
+        Signing.verifyingTheSignature(keySerialization.deserializePublicKeyFromString(proposer), signature, proposer)
         
     except:
         return json.dumps({"response": "KeyError"})
@@ -756,7 +756,7 @@ def RequestEntireBlockchain():
 
     output = {
         "signature": signature,
-        "sender": keySerialization.serializePublicKey(PBFTNode.node.publicKey),
+        "sender": keySerialization.serializePublicKeyToString(PBFTNode.node.publicKey),
         "blockChain": blockchainString,
         "blockChainHash": blockChainHash
     }
@@ -775,7 +775,7 @@ def AddNewBlockForSingularNode():
     idIpInfo = {}
 
     try:
-        Signing.verifyingTheSignature(keySerialization.deserializePublicKey(proposer), signature, proposer)
+        Signing.verifyingTheSignature(keySerialization.deserializePublicKeyFromString(proposer), signature, proposer)
        
     except:
         return json.dumps({"response": "KeyError"})

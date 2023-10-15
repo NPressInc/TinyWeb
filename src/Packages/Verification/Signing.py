@@ -1,25 +1,38 @@
 import nacl.utils
 from nacl.public import PrivateKey, Box
+from nacl.signing import SignedMessage
 
 from Packages.Serialization.Serialization import Serialization
 from nacl.signing import SigningKey, VerifyKey
-import json
+import base64
 from nacl.exceptions import BadSignatureError
-
+from Packages.Structures.Signature import Signature
 
 class Signing:
     
     @staticmethod
-    def normalSigning(private_key, data):
+    def normalSigning(private_key, data)->str:
         PKBytes = private_key.encode()
 
         signing_key = SigningKey(PKBytes)
 
         data = data.encode()
 
-        signed_message = signing_key.sign(data)
+        signed_message = Signature(signing_key.sign(data))
 
-        return Serialization.serializeObjToJson(signed_message)
+        serialized_signed_message_base64 = signed_message.serialized
+
+        return serialized_signed_message_base64
+    
+    
+    def verifyStringSignatureData(public_key, signatureString) -> bool:
+        data, signature = Signature.deserialize_from_string(signatureString)
+        verify_key = VerifyKey(public_key)
+        try:
+            verify_key.verify(data, signature)
+            return True
+        except:
+            return False
         
 
     def verifyingTheSignature(public_key, signature, data):

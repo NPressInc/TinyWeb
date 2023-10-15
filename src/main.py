@@ -1,4 +1,4 @@
-from Packages.Tests.threading import ThreadingTests
+
 from Packages.pBFT.node import PBFTNode
 from Packages.Communication.NodeFlaskApi import app
 from Packages.Communication.BlockChainQueryApi import BCQapp
@@ -55,9 +55,9 @@ BCQAThread = threading.Thread(target=runBlockChainApiFlask)
 FlaskThread = threading.Thread(target=runNodeFlask)
 RunNodeThread = threading.Thread(target=PBFTNode.runNode)
 
-#RunNodeThread.start()
+RunNodeThread.start()
 
-#FlaskThread.start()
+FlaskThread.start()
 
 BCQAThread.start()
 
@@ -67,6 +67,6 @@ time.sleep(100000)
 
 BCQAThread.join()
 
-#RunNodeThread.join()
+RunNodeThread.join()
 
-#FlaskThread.join
+FlaskThread.join

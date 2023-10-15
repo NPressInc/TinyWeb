@@ -1,6 +1,6 @@
 
 from Packages.Serialization.keySerialization import keySerialization
-from Packages.structures.BlockChain.Parsers.BlockchainParser import BlockchainParser
+from Packages.Structures.BlockChain.Parsers.BlockchainParser import BlockchainParser
 from ..Serialization.Serialization import Serialization
 import requests
 
@@ -25,7 +25,7 @@ class PermissionsEditor():
             "type": type,
             "scope": scope,
             "user": fledgling,
-            "sender": keySerialization.serializePublicKey(node.publicKey)
+            "sender": keySerialization.serializePublicKeyToString(node.publicKey)
         }
 
         if type == "SMS":
