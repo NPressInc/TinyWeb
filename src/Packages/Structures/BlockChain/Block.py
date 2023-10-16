@@ -5,10 +5,11 @@ import json
 from Packages.Serialization.Serialization import Serialization
 from ..MerkleTree.MerkleTreeNode import MerkleTreeNode
 from ..MerkleTree.MerkleTree import MerkleTree
+from Packages.Structures.BlockChain.Transaction import Transaction
 
  
 class Block:
-    def __init__(self, index, transactions, timestamp, previous_hash, proposerId, merkleTree = None, TransactionIndexMap = None):
+    def __init__(self, index, transactions: list[Transaction], timestamp, previous_hash, proposerId, merkleTree = None, TransactionHashIndexMap = None):
         self.index          = index
         self.transactions   = transactions
         self.timestamp      = timestamp
@@ -17,28 +18,27 @@ class Block:
         self.merkleTree     = merkleTree
         if merkleTree == None:
             self.buildMerkleTree()
-        if TransactionIndexMap == None:
-            self.TransactionIndexMap = self.getDictFromTransactions(transactions)
+        if TransactionHashIndexMap == None:
+            self.TransactionHashIndexMap = self.getDictFromTransactions(transactions)
         else:
-            self.TransactionIndexMap = TransactionIndexMap
+            self.TransactionHashIndexMap = TransactionHashIndexMap
 
     @staticmethod
-    def getDictFromTransactions(transactions):
+    def getDictFromTransactions(transactions: list[Transaction]):
         output = {}
         for i in range(len(transactions)):
-            output[ Serialization.serializeObjToJson(transactions[i])] = i
+            output[transactions[i].hash()] = i
         return output
 
     def buildMerkleTree(self):
         """
         A function that return the hash of the block contents.
         """
-
         if len(self.transactions) > 0:
             rootNode = MerkleTreeNode("")
             transactionStrings = []
             for tr in self.transactions:
-                transactionStrings.append(Serialization.serializeObjToJson(tr))
+                transactionStrings.append(tr.serializeJson())
 
 
             rootNode = rootNode.buildTree(transactionStrings)
@@ -48,7 +48,6 @@ class Block:
             self.merkleTree = "Empty"
 
     def getHash(self):
-            
         block_string = self.serializeJSONForHashing()
         return hashlib.sha256(block_string.encode()).hexdigest()
     
@@ -83,7 +82,7 @@ class Block:
 
             transactionStrings = []
             for tr in self.transactions:
-                transactionStrings.append(Serialization.serializeObjToJson(tr))
+                transactionStrings.append(tr.serializeJson())
 
             outputStruct = {
                     "index": self.index,
@@ -109,13 +108,12 @@ class Block:
         return json.dumps(outputStruct , sort_keys=True)
     
     def serializeJSON(self):
-        
 
         if self.merkleTree != None and self.merkleTree != "Empty":
 
             transactionStrings = []
             for tr in self.transactions:
-                transactionStrings.append(Serialization.serializeObjToJson(tr))
+                transactionStrings.append(tr.serializeJson())
 
             outputStruct = {
                     "index": self.index,

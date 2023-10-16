@@ -758,7 +758,6 @@ class PBFTNode:
     def configureBlockChainForFirstUse():
 
         client1 = TinyWebClient.initializeClient("0")
-        client1PublicKeyString = keySerialization.serializePublicKeyToString(client1.publicKey)
-        blockChain = BlockChain(creatorPublicKey=client1PublicKeyString)
+        blockChain = BlockChain(creatorPublicKey=client1.publicKey)
 
         return blockChain

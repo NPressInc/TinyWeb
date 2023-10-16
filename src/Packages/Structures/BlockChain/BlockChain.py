@@ -7,8 +7,8 @@ import json
 
 import time
 
-from Packages.Serialization.Serialization import Serialization
-
+from Packages.Structures.BlockChain.Transaction import Transaction
+from nacl.public import PublicKey
 from .Block import Block
 
 
@@ -18,7 +18,7 @@ class BlockChain:
     #RoleDefinitions = List of Dict
     #PermissionDefinitions = List of Dict
     # RoleDict = Dict of lists
-    def __init__(self, chain = None, length = None, creatorPublicKey = None):
+    def __init__(self, chain = None, length = None, creatorPublicKey: PublicKey = None):
 
 
         if length != None:
@@ -40,10 +40,13 @@ class BlockChain:
         """
         transactions = []
 
-        transactions.append({
-            "messageType": "CreatorAssignment",
-            "sender": creatorPublicKey
-        })
+        transactions.append(Transaction(
+            messageType="CreatorAssignment",
+            sender=creatorPublicKey,
+            peers=[],
+            publicKeys=[creatorPublicKey],
+            ids=[0]
+        ))
 
         #for tr in transactions:
            #print("----------")

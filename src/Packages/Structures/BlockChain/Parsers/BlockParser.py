@@ -67,7 +67,7 @@ class BlockParser:
         peersTransaction = None
         for i in range(len(block.transactions)-1, -1, -1):
             tr = block.transactions[i]
-            if tr["messageType"] == "PeerList":
+            if tr.messageType == "PeerList":
                 peersTransaction = tr
                 break
 
@@ -77,7 +77,7 @@ class BlockParser:
     def getAllgroups(block):
         groups = []
         for tr in block.transactions:
-            if tr["messageType"] == "GroupDescriptor" and tr["groupType"] == "People":
+            if tr.messageType == "GroupDescriptor" and tr.groupType == "People":
                 groups.append(tr)
         return groups  
         
@@ -86,8 +86,8 @@ class BlockParser:
     def getAllUsers(block):
         users = []
         for tr in block.transactions:
-            if tr["messageType"] == "GroupDescriptor" and tr["groupType"] == "People":
-                users = users + tr["entities"]
+            if tr.messageType == "GroupDescriptor" and tr.groupType == "People":
+                users = users + tr.entities
         return users  
 
     @staticmethod

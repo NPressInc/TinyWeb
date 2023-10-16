@@ -70,19 +70,21 @@ def get_transaction():
     
     if transactionHash in MessageQueues.transactionQueue:
         return json.dumps({"response": "Transaction Already Queued"})
-    
-    print("------------")
-    print(transaction.sender)
-    print("------------")
-    print(BlockchainParser.getAllUsers(PBFTNode.node.blockChain))
-    print("------------")
 
-    if not(transaction.sender in BlockchainParser.getAllUsers(PBFTNode.node.blockChain)):
+    if not(transaction.sender.encode() in BlockchainParser.getAllUsers(PBFTNode.node.blockChain)):
         print({"userNot Verified publicKey": transaction.sender})
         return json.dumps({"response": "User Not Verified"})
 
+    print("------------")
+    print(transaction.sender.encode())
+    print("------------")
+    print(transaction.signatureStr)
+    print("------------")
+    print(transactionHash)
+    print("------------")
+
     try:
-        Signing.verifyingTheSignature(transaction.sender, transaction.signature,transactionHash)
+        Signing.verifyStringSignatureData(transaction.sender, transaction.signatureStr)
     except:
         return json.dumps({"response": "KeyError"})
 

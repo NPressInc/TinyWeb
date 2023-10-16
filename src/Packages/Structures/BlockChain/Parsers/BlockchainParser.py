@@ -84,8 +84,8 @@ class BlockchainParser:
 
         genesisBlock = blockchain.chain[0]
         for transaction in genesisBlock.transactions:
-            if transaction["messageType"] == "CreatorAssignment":
-                allUsers.append(transaction["sender"])
+            if transaction.messageType == "CreatorAssignment":
+                allUsers.append(transaction.sender.encode())
                 
         return list(set(allUsers))
 
@@ -93,8 +93,8 @@ class BlockchainParser:
     def getCreator(blockchain):
         genesisBlock = blockchain.chain[0]
         for transaction in genesisBlock.transactions:
-            if transaction["messageType"] == "CreatorAssignment":
-                return transaction["sender"]
+            if transaction.messageType == "CreatorAssignment":
+                return transaction.sender
         return None
 
     @staticmethod

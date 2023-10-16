@@ -5,13 +5,24 @@ import json
 from Packages.Structures.Signature import Signature
 
 class Transaction:
-    def __init__(self, messageType: str, peers: list[str], publicKeys: list[PublicKey], ids: list[int], sender: PublicKey, signatureStr:str = None ):
+    def __init__(self, 
+                 messageType: str, 
+                 peers: list[str], 
+                 publicKeys: list[PublicKey], 
+                 ids: list[int], 
+                 sender: PublicKey, 
+                 signatureStr:str = None, 
+                 groupType: str = "People",
+                 groupId: str = "number1"
+            ):
         self.messageType = messageType
         self.peers = peers
         self.publicKeys = publicKeys
         self.ids = ids
         self.sender = sender
         self.signatureStr = signatureStr
+        self.groupType = groupType
+        self.groupId = groupId
 
     def hash(self) -> str:
         hash_input = ""
@@ -29,7 +40,9 @@ class Transaction:
             "peers": self.peers,
             "publicKeys": [str(base64.b64encode(pk.encode()).decode()) for pk in self.publicKeys],
             "ids": self.ids,
-            "sender": str(str(base64.b64encode(self.sender.encode()).decode()))
+            "sender": str(str(base64.b64encode(self.sender.encode()).decode())),
+            "signatureStr":self.signatureStr, 
+            "groupType":self.groupType
         }
         return json.dumps(data)
     
@@ -40,7 +53,9 @@ class Transaction:
             peers = json_dict.get("peers"),
             publicKeys=[PublicKey(base64.b64decode(base64Pk.encode())) for base64Pk in json_dict.get("publicKeys")],
             ids=json_dict.get("ids"),
-            sender=PublicKey(base64.b64decode(json_dict.get("sender").encode()))
+            sender=PublicKey(base64.b64decode(json_dict.get("sender").encode())),
+            signatureStr=json_dict.get("signatureStr"),
+            groupType=json_dict.get("groupType")
         )
     
     

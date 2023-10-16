@@ -1,5 +1,5 @@
 import nacl.utils
-from nacl.public import PrivateKey, Box
+from nacl.public import PrivateKey, Box, PublicKey
 from nacl.signing import SignedMessage
 
 from Packages.Serialization.Serialization import Serialization
@@ -11,7 +11,7 @@ from Packages.Structures.Signature import Signature
 class Signing:
     
     @staticmethod
-    def normalSigning(private_key, data)->str:
+    def normalSigning(private_key: PrivateKey, data)->str:
         PKBytes = private_key.encode()
 
         signing_key = SigningKey(PKBytes)
@@ -25,9 +25,10 @@ class Signing:
         return serialized_signed_message_base64
     
     
-    def verifyStringSignatureData(public_key, signatureString) -> bool:
+    def verifyStringSignatureData(public_key: PublicKey, signatureString) -> bool:
         data, signature = Signature.deserialize_from_string(signatureString)
-        verify_key = VerifyKey(public_key)
+        PKBytes = public_key.encode()
+        verify_key = VerifyKey(PKBytes)
         try:
             verify_key.verify(data, signature)
             return True
